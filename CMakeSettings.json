@@ -1,0 +1,372 @@
+﻿{
+  "configurations": [
+    {
+      "name": "Windows-x64-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "buildRoot": "${projectDir}/cmake/${name}",
+      "installRoot": "${projectDir}/out/install/${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x64" ],
+      "variables": [
+        {
+          "name": "CMAKE_ARCHIVE_OUTPUT_DIRECTORY",
+          "value": "${projectDir}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
+          "value": "${projectDir}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
+          "value": "${projectDir}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_C_FLAGS",
+          "value": "/DWIN32 /D_WINDOWS /W4 /WX",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_CXX_FLAGS",
+          "value": "/DWIN32 /D_WINDOWS /GR /EHsc /W4 /WX /std:c++14",
+          "type": "STRING"
+        }
+      ],
+      "intelliSenseMode": "windows-msvc-x64"
+    },
+    {
+      "name": "Windows-x64-Release",
+      "generator": "Ninja",
+      "configurationType": "MinSizeRel",
+      "buildRoot": "${projectDir}/cmake/${name}",
+      "installRoot": "${projectDir}/out/install/${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x64" ],
+      "variables": [
+        {
+          "name": "CMAKE_ARCHIVE_OUTPUT_DIRECTORY",
+          "value": "${projectDir}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
+          "value": "${projectDir}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
+          "value": "${projectDir}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_C_FLAGS",
+          "value": "/DWIN32 /D_WINDOWS /W4 /WX",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_CXX_FLAGS",
+          "value": "/DWIN32 /D_WINDOWS /GR /EHsc /W4 /WX /std:c++14",
+          "type": "STRING"
+        }
+      ],
+      "intelliSenseMode": "windows-msvc-x64"
+    },
+    {
+      "name": "Windows-x86-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "buildRoot": "${projectDir}/cmake/${name}",
+      "installRoot": "${projectDir}/out/install/${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x86" ],
+      "variables": [
+        {
+          "name": "CMAKE_ARCHIVE_OUTPUT_DIRECTORY",
+          "value": "${projectDir}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
+          "value": "${projectDir}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
+          "value": "${projectDir}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_C_FLAGS",
+          "value": "/DWIN32 /D_WINDOWS /W4 /WX",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_CXX_FLAGS",
+          "value": "/DWIN32 /D_WINDOWS /GR /EHsc /W4 /WX /std:c++14",
+          "type": "STRING"
+        }
+      ],
+      "intelliSenseMode": "windows-msvc-x86"
+    },
+    {
+      "name": "Windows-x86-Release",
+      "generator": "Ninja",
+      "configurationType": "MinSizeRel",
+      "buildRoot": "${projectDir}/cmake/${name}",
+      "installRoot": "${projectDir}/out/install/${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "msvc_x86" ],
+      "variables": [
+        {
+          "name": "CMAKE_ARCHIVE_OUTPUT_DIRECTORY",
+          "value": "${projectDir}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
+          "value": "${projectDir}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
+          "value": "${projectDir}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_C_FLAGS",
+          "value": "/DWIN32 /D_WINDOWS /W4 /WX",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_CXX_FLAGS",
+          "value": "/DWIN32 /D_WINDOWS /GR /EHsc /W4 /WX /std:c++14",
+          "type": "STRING"
+        }
+      ],
+      "intelliSenseMode": "windows-msvc-x86"
+    },
+    {
+      "name": "Linux-x64-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "cmakeExecutable": "/usr/bin/cmake",
+      "remoteCopySourcesExclusionList": [ ".vs", "cmake", "out" ],
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "linux_x64" ],
+      "remoteMachineName": "${defaultRemoteMachineName}",
+      "remoteCMakeListsRoot": "$HOME/${projectDirName}/src",
+      "remoteBuildRoot": "$HOME/${projectDirName}/cmake/${name}",
+      "remoteInstallRoot": "$HOME/${projectDirName}/out/install/${name}",
+      "remoteCopySources": true,
+      "rsyncCommandArgs": "-t --delete --delete-excluded",
+      "remoteCopyBuildOutput": true,
+      "remoteCopySourcesMethod": "rsync",
+      "addressSanitizerRuntimeFlags": "detect_leaks=0",
+      "variables": [
+        {
+          "name": "CMAKE_ARCHIVE_OUTPUT_DIRECTORY",
+          "value": "$HOME/${projectDirName}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
+          "value": "$HOME/${projectDirName}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
+          "value": "$HOME/${projectDirName}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_CXX_FLAGS",
+          "value": "-std=c++14 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_C_FLAGS",
+          "value": "-std=c99 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_EXE_LINKER_FLAGS",
+          "value": "-Wl,-O1,-pie,--as-needed,--fatal-warnings,-rpath,.",
+          "type": "STRING"
+        }
+      ],
+      "intelliSenseMode": "linux-gcc-x64"
+    },
+    {
+      "name": "Linux-x64-Release",
+      "generator": "Ninja",
+      "configurationType": "MinSizeRel",
+      "cmakeExecutable": "/usr/bin/cmake",
+      "remoteCopySourcesExclusionList": [ ".vs", "cmake", "out" ],
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "linux_x64" ],
+      "remoteMachineName": "${defaultRemoteMachineName}",
+      "remoteCMakeListsRoot": "$HOME/${projectDirName}/src",
+      "remoteBuildRoot": "$HOME/${projectDirName}/cmake/${name}",
+      "remoteInstallRoot": "$HOME/${projectDirName}/out/install/${name}",
+      "remoteCopySources": true,
+      "rsyncCommandArgs": "-t --delete --delete-excluded",
+      "remoteCopyBuildOutput": true,
+      "remoteCopySourcesMethod": "rsync",
+      "addressSanitizerRuntimeFlags": "detect_leaks=0",
+      "variables": [
+        {
+          "name": "CMAKE_ARCHIVE_OUTPUT_DIRECTORY",
+          "value": "$HOME/${projectDirName}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
+          "value": "$HOME/${projectDirName}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
+          "value": "$HOME/${projectDirName}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_CXX_FLAGS",
+          "value": "-std=c++14 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_C_FLAGS",
+          "value": "-std=c99 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_EXE_LINKER_FLAGS",
+          "value": "-Wl,-O1,-pie,--as-needed,--fatal-warnings,-rpath,.",
+          "type": "STRING"
+        }
+      ],
+      "intelliSenseMode": "linux-gcc-x64"
+    },
+    {
+      "name": "Linux-x86-Debug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "cmakeExecutable": "/usr/bin/cmake",
+      "remoteCopySourcesExclusionList": [ ".vs", "cmake", "out" ],
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "linux_x86" ],
+      "remoteMachineName": "${defaultRemoteMachineName}",
+      "remoteCMakeListsRoot": "$HOME/${projectDirName}/src",
+      "remoteBuildRoot": "$HOME/${projectDirName}/cmake/${name}",
+      "remoteInstallRoot": "$HOME/${projectDirName}/out/install/${name}",
+      "remoteCopySources": true,
+      "rsyncCommandArgs": "-t --delete --delete-excluded",
+      "remoteCopyBuildOutput": true,
+      "remoteCopySourcesMethod": "rsync",
+      "addressSanitizerRuntimeFlags": "detect_leaks=0",
+      "variables": [
+        {
+          "name": "CMAKE_ARCHIVE_OUTPUT_DIRECTORY",
+          "value": "$HOME/${projectDirName}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
+          "value": "$HOME/${projectDirName}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
+          "value": "$HOME/${projectDirName}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_CXX_FLAGS",
+          "value": "-std=c++14 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_C_FLAGS",
+          "value": "-std=c99 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_EXE_LINKER_FLAGS",
+          "value": "-Wl,-O1,-pie,--as-needed,--fatal-warnings,-rpath,.",
+          "type": "STRING"
+        }
+      ],
+      "intelliSenseMode": "linux-gcc-x86"
+    },
+    {
+      "name": "Linux-x86-Release",
+      "generator": "Ninja",
+      "configurationType": "MinSizeRel",
+      "cmakeExecutable": "/usr/bin/cmake",
+      "remoteCopySourcesExclusionList": [ ".vs", "cmake", "out" ],
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "",
+      "ctestCommandArgs": "",
+      "inheritEnvironments": [ "linux_x86" ],
+      "remoteMachineName": "${defaultRemoteMachineName}",
+      "remoteCMakeListsRoot": "$HOME/${projectDirName}/src",
+      "remoteBuildRoot": "$HOME/${projectDirName}/cmake/${name}",
+      "remoteInstallRoot": "$HOME/${projectDirName}/out/install/${name}",
+      "remoteCopySources": true,
+      "rsyncCommandArgs": "-t --delete --delete-excluded",
+      "remoteCopyBuildOutput": true,
+      "remoteCopySourcesMethod": "rsync",
+      "addressSanitizerRuntimeFlags": "detect_leaks=0",
+      "variables": [
+        {
+          "name": "CMAKE_ARCHIVE_OUTPUT_DIRECTORY",
+          "value": "$HOME/${projectDirName}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
+          "value": "$HOME/${projectDirName}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
+          "value": "$HOME/${projectDirName}/out/build/${name}",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_CXX_FLAGS",
+          "value": "-std=c++14 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_C_FLAGS",
+          "value": "-std=c99 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
+          "type": "STRING"
+        },
+        {
+          "name": "CMAKE_EXE_LINKER_FLAGS",
+          "value": "-Wl,-O1,-pie,--as-needed,--fatal-warnings,-rpath,.",
+          "type": "STRING"
+        }
+      ],
+      "intelliSenseMode": "linux-gcc-x86"
+    }
+  ]
+}
