@@ -29,11 +29,10 @@
 
 namespace flib
 {
-  template<class T = std::chrono::milliseconds>
   class Scheduler
   {
   public:
-    using Duration = T;
+    using Duration = std::chrono::milliseconds;
     using Event = std::function<void(void)>;
 
     enum class Type
@@ -85,19 +84,16 @@ namespace flib
 
 // IMPLEMENTATION
 
-template<class T>
-const std::chrono::milliseconds flib::Scheduler<T>::cDestructionTimeout = std::chrono::milliseconds(250);
+const std::chrono::milliseconds flib::Scheduler::cDestructionTimeout = std::chrono::milliseconds(250);
 
-template<class T>
-flib::Scheduler<T>::Scheduler(void)
+flib::Scheduler::Scheduler(void)
   : mState(State::Idle),
   mConfiguration{ {},Duration(0),Duration(0),Type::FixedDelay },
   mWorker(std::async(std::launch::async, &Scheduler::AsyncProcess, this))
 {
 }
 
-template<class T>
-flib::Scheduler<T>::~Scheduler(void) noexcept
+flib::Scheduler::~Scheduler(void) noexcept
 {
   mState = State::Destruct;
   do
@@ -106,21 +102,18 @@ flib::Scheduler<T>::~Scheduler(void) noexcept
   } while (std::future_status::timeout == mWorker.wait_for(cDestructionTimeout));
 }
 
-template<class T>
-void flib::Scheduler<T>::Cancel(void)
+void flib::Scheduler::Cancel(void)
 {
   mState = State::Idle;
   mWaitCondition.notify_all();
 }
 
-template<class T>
-bool flib::Scheduler<T>::IsScheduled(void) const
+bool flib::Scheduler::IsScheduled(void) const
 {
   return State::Activating == mState || State::Active == mState;
 }
 
-template<class T>
-void flib::Scheduler<T>::Reschedule(void)
+void flib::Scheduler::Reschedule(void)
 {
   std::unique_lock<decltype(mConfigurationAccessLock)> configurationGuard(mConfigurationAccessLock);
   if (!mConfiguration.event)
@@ -132,8 +125,7 @@ void flib::Scheduler<T>::Reschedule(void)
   mWaitCondition.notify_all();
 }
 
-template<class T>
-void flib::Scheduler<T>::Schedule(const Event& event, const Duration& delay, const Duration& period, const Type type)
+void flib::Scheduler::Schedule(const Event& event, const Duration& delay, const Duration& period, const Type type)
 {
   if (!event)
   {
@@ -147,8 +139,7 @@ void flib::Scheduler<T>::Schedule(const Event& event, const Duration& delay, con
   mWaitCondition.notify_all();
 }
 
-template<class T>
-void flib::Scheduler<T>::AsyncProcess(void)
+void flib::Scheduler::AsyncProcess(void)
 {
   std::mutex waitLock;
   std::unique_lock<decltype(waitLock)> waitGuard(waitLock);
