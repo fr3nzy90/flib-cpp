@@ -155,7 +155,7 @@ flib::Executor::Token flib::Executor::Invoke(const Task& task, const Priority pr
   else
   {
     auto it = std::upper_bound(mTasks.cbegin(), mTasks.cend(), priority,
-      [](const auto& value, const auto& element)
+      [](const decltype(priority)& value, const decltype(mTasks)::value_type& element)
       {
         return value > std::get<1>(*element);
       });

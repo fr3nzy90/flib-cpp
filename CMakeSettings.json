@@ -193,7 +193,7 @@
         },
         {
           "name": "CMAKE_CXX_FLAGS",
-          "value": "-std=c++14 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
+          "value": "-std=c++11 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
           "type": "STRING"
         },
         {
@@ -246,7 +246,7 @@
         },
         {
           "name": "CMAKE_CXX_FLAGS",
-          "value": "-std=c++14 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
+          "value": "-std=c++11 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
           "type": "STRING"
         },
         {
@@ -299,7 +299,7 @@
         },
         {
           "name": "CMAKE_CXX_FLAGS",
-          "value": "-std=c++14 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
+          "value": "-std=c++11 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
           "type": "STRING"
         },
         {
@@ -352,7 +352,7 @@
         },
         {
           "name": "CMAKE_CXX_FLAGS",
-          "value": "-std=c++14 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
+          "value": "-std=c++11 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
           "type": "STRING"
         },
         {
