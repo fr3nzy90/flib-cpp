@@ -93,6 +93,10 @@ void flib::ByteSwap(uint64_t& data) noexcept
 
 void flib::ByteSwap(uint8_t* data, const std::size_t length, const std::size_t offset) noexcept
 {
+  if (!data)
+  {
+    return;
+  }
   data += offset;
   uint8_t temp;
   for (std::size_t i = 0, m = length / 2; i < m; ++i)

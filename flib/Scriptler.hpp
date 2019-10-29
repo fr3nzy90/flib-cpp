@@ -119,18 +119,16 @@ bool flib::Scriptler::IsEmpty(void) const
 void flib::Scriptler::Set(const std::string& id, const Command& command)
 {
   std::lock_guard<decltype(mCommandsAccessLock)> commandsAccessGuard(mCommandsAccessLock);
-  auto it = mCommands.find(id);
   if (command)
   {
     mCommands[id] = command;
   }
   else
   {
-    if (mCommands.cend() == it)
+    if (0 == mCommands.erase(id))
     {
       throw std::invalid_argument("Nothing to erase - invalid command id");
     }
-    mCommands.erase(it);
   }
 }
 
@@ -159,7 +157,7 @@ void flib::Scriptler::Start(Stream& scriptStream, const std::string& tokenPatter
     command = {};
     {
       std::lock_guard<decltype(mCommandsAccessLock)> commandsAccessGuard(mCommandsAccessLock);
-      if (tokens.cbegin() != tokens.cend())
+      if (!tokens.empty())
       {
         auto it = mCommands.find(*tokens.cbegin());
         if (mCommands.cend() != it)
