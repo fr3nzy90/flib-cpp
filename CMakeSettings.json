@@ -27,11 +27,6 @@
           "type": "STRING"
         },
         {
-          "name": "CMAKE_C_FLAGS",
-          "value": "/DWIN32 /D_WINDOWS /W4 /WX",
-          "type": "STRING"
-        },
-        {
           "name": "CMAKE_CXX_FLAGS",
           "value": "/DWIN32 /D_WINDOWS /GR /EHsc /W4 /WX /std:c++14",
           "type": "STRING"
@@ -63,11 +58,6 @@
         {
           "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
           "value": "${projectDir}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_C_FLAGS",
-          "value": "/DWIN32 /D_WINDOWS /W4 /WX",
           "type": "STRING"
         },
         {
@@ -105,11 +95,6 @@
           "type": "STRING"
         },
         {
-          "name": "CMAKE_C_FLAGS",
-          "value": "/DWIN32 /D_WINDOWS /W4 /WX",
-          "type": "STRING"
-        },
-        {
           "name": "CMAKE_CXX_FLAGS",
           "value": "/DWIN32 /D_WINDOWS /GR /EHsc /W4 /WX /std:c++14",
           "type": "STRING"
@@ -141,11 +126,6 @@
         {
           "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
           "value": "${projectDir}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_C_FLAGS",
-          "value": "/DWIN32 /D_WINDOWS /W4 /WX",
           "type": "STRING"
         },
         {
@@ -197,11 +177,6 @@
           "type": "STRING"
         },
         {
-          "name": "CMAKE_C_FLAGS",
-          "value": "-std=c99 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
-          "type": "STRING"
-        },
-        {
           "name": "CMAKE_EXE_LINKER_FLAGS",
           "value": "-Wl,-O1,-pie,--as-needed,--fatal-warnings,-rpath,.",
           "type": "STRING"
@@ -247,11 +222,6 @@
         {
           "name": "CMAKE_CXX_FLAGS",
           "value": "-std=c++11 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_C_FLAGS",
-          "value": "-std=c99 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
           "type": "STRING"
         },
         {
@@ -303,11 +273,6 @@
           "type": "STRING"
         },
         {
-          "name": "CMAKE_C_FLAGS",
-          "value": "-std=c99 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
-          "type": "STRING"
-        },
-        {
           "name": "CMAKE_EXE_LINKER_FLAGS",
           "value": "-Wl,-O1,-pie,--as-needed,--fatal-warnings,-rpath,.",
           "type": "STRING"
@@ -353,11 +318,6 @@
         {
           "name": "CMAKE_CXX_FLAGS",
           "value": "-std=c++11 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_C_FLAGS",
-          "value": "-std=c99 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
           "type": "STRING"
         },
         {

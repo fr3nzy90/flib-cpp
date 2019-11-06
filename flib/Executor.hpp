@@ -242,7 +242,7 @@ void flib::Executor::AsyncProcess(void)
   {
     mWaitCondition.wait(waitGuard, [this]()
       {
-        return State::Destruct == mState || State::Active == mState && !IsEmpty();
+        return State::Destruct == mState || (State::Active == mState && !IsEmpty());
       });
     tasksAccessGuard.lock();
     if (State::Active != mState || mTasks.empty())
