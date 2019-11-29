@@ -54,7 +54,7 @@ namespace flib
       const Type type = Type::FixedDelay);
 
   private:
-    void AsyncProcess(void);
+    inline void AsyncProcess(void);
 
     using Clock = std::chrono::steady_clock;
 
@@ -66,6 +66,7 @@ namespace flib
       Destruct
     };
 
+    const std::chrono::milliseconds mDestructionTimeout;
     std::atomic<State> mState;
     std::condition_variable mWaitCondition;
     struct
@@ -77,17 +78,14 @@ namespace flib
     } mConfiguration;
     mutable std::recursive_mutex mConfigurationAccessLock;
     std::future<void> mWorker;
-
-    static const std::chrono::milliseconds cDestructionTimeout;
   };
 }
 
 // IMPLEMENTATION
 
-const std::chrono::milliseconds flib::Scheduler::cDestructionTimeout = std::chrono::milliseconds(250);
-
 flib::Scheduler::Scheduler(void)
-  : mState(State::Idle),
+  : mDestructionTimeout(std::chrono::milliseconds(50)),
+  mState(State::Idle),
   mConfiguration{ {},Duration(0),Duration(0),Type::FixedDelay },
   mWorker(std::async(std::launch::async, &Scheduler::AsyncProcess, this))
 {
@@ -99,7 +97,7 @@ flib::Scheduler::~Scheduler(void) noexcept
   do
   {
     mWaitCondition.notify_all();
-  } while (std::future_status::timeout == mWorker.wait_for(cDestructionTimeout));
+  } while (std::future_status::timeout == mWorker.wait_for(mDestructionTimeout));
 }
 
 void flib::Scheduler::Cancel(void)

@@ -22,38 +22,75 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
-#include <cstring>
 
 namespace flib
 {
+  // Structure for determination of platform byte endianess
   struct Endianess
   {
   public:
-    static const uint8_t Native;
+    // Method for retrieving native platform byte endianess
+    //
+    // Returns:
+    //   native reference byte endianess
+    inline static uint8_t Native(void);
 
     enum : uint8_t
     {
+      // Big byte - reference byte endianess
       BigByte = 0x76u,
+      // Big word - reference byte endianess
       BigWord = 0x54u,
+      // Little word - reference byte endianess
       LittleWord = 0x32u,
+      // Little byte - reference byte endianess
       LittleByte = 0x10u
     };
   };
 
+  // Method for inplace reversing bytes of 16-bit unsigned integer
+  //
+  // Parameters:
+  //   data - 16-bit unsigned integer
   inline void ByteSwap(uint16_t& data) noexcept;
+
+  // Method for reversing bytes of 32-bit unsigned integer
+  //
+  // Parameters:
+  //   data - 32-bit unsigned integer
   inline void ByteSwap(uint32_t& data) noexcept;
+
+  // Method for reversing bytes of 64-bit unsigned integer
+  //
+  // Parameters:
+  //   data - 64-bit unsigned integer
   inline void ByteSwap(uint64_t& data) noexcept;
+
+  // Method for inplace reversing bytes of given byte array
+  //
+  // Notes:
+  //   - Method assumes that given length and offset are correct, because of this it does not check for memory bounds
+  //   - Length does not include offset
+  //
+  // Parameters:
+  //     data - Pointer to byte array
+  //   length - Number of bytes to reverse, default is 0
+  //   offset - Number of bytes (from the beggining of the byte array) to skip before reversing, default is 0
   inline void ByteSwap(uint8_t* data, const std::size_t length = 0, const std::size_t offset = 0) noexcept;
 }
 
 // IMPLEMENTATION
 
-const uint8_t flib::Endianess::Native = []() {
-  static constexpr uint32_t value = 0x76543210ul;
-  uint8_t result = 0;
-  std::memcpy(&result, &value, sizeof result);
+uint8_t flib::Endianess::Native(void)
+{
+  static uint8_t result = 0;
+  if (0 == result)
+  {
+    uint32_t value = 0x76543210ul;
+    result = reinterpret_cast<decltype(result)*>(&value)[0];
+  }
   return result;
-}();
+}
 
 void flib::ByteSwap(uint16_t& data) noexcept
 {

@@ -63,7 +63,7 @@ namespace flib
     inline std::size_t WorkerCount(void) const;
 
   private:
-    void AsyncProcess(void);
+    inline void AsyncProcess(void);
 
     enum class State
     {
@@ -72,6 +72,7 @@ namespace flib
       Destruct
     };
 
+    const std::chrono::milliseconds mDestructionTimeout;
     std::atomic<State> mState;
     std::atomic<std::size_t> mTaskLimit;
     std::list<std::shared_ptr<std::tuple<Task, Priority>>> mTasks;
@@ -79,17 +80,14 @@ namespace flib
     std::condition_variable mWaitCondition;
     mutable std::recursive_mutex mWorkersAccessLock;
     std::list<std::future<void>> mWorkers;
-
-    static const std::chrono::milliseconds cDestructionTimeout;
   };
 }
 
 // IMPLEMENTATION
 
-const std::chrono::milliseconds flib::Executor::cDestructionTimeout = std::chrono::milliseconds(250);
-
 flib::Executor::Executor(const bool enabled, const std::size_t workerCount, const std::size_t taskLimit)
-  : mState(enabled ? State::Active : State::Idle),
+  : mDestructionTimeout(std::chrono::milliseconds(50)),
+  mState(enabled ? State::Active : State::Idle),
   mTaskLimit(taskLimit),
   mWorkers(workerCount)
 {
@@ -107,7 +105,7 @@ flib::Executor::~Executor(void) noexcept
     do
     {
       mWaitCondition.notify_all();
-    } while (std::future_status::timeout == worker.wait_for(cDestructionTimeout));
+    } while (std::future_status::timeout == worker.wait_for(mDestructionTimeout));
   }
 }
 
@@ -205,7 +203,7 @@ void flib::Executor::SetWorkerCount(const std::size_t workerCount)
     do
     {
       mWaitCondition.notify_all();
-    } while (std::future_status::timeout == worker.wait_for(cDestructionTimeout));
+    } while (std::future_status::timeout == worker.wait_for(mDestructionTimeout));
   }
   mWorkers.resize(workerCount);
   mState = State::Idle;

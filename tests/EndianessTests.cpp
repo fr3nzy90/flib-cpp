@@ -41,10 +41,10 @@ namespace
 
 TEST_CASE("Endianess tests - Sanity check", "[Endianess]")
 {
-  REQUIRE((flib::Endianess::Native == flib::Endianess::BigByte ||
-    flib::Endianess::Native == flib::Endianess::BigWord ||
-    flib::Endianess::Native == flib::Endianess::LittleWord ||
-    flib::Endianess::Native == flib::Endianess::LittleByte));
+  REQUIRE((flib::Endianess::Native() == flib::Endianess::BigByte ||
+    flib::Endianess::Native() == flib::Endianess::BigWord ||
+    flib::Endianess::Native() == flib::Endianess::LittleWord ||
+    flib::Endianess::Native() == flib::Endianess::LittleByte));
 }
 
 TEST_CASE("Endianess tests - 2 byte swap", "[Endianess]")

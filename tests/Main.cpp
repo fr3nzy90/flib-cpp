@@ -27,6 +27,14 @@
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
 
+// safeguard against redefinition link issue in case of multiple header inclusion within single compilation unit
+#include "flib/Endianess.hpp"
+#include "flib/Executor.hpp"
+#include "flib/Observable.hpp"
+#include "flib/Scheduler.hpp"
+#include "flib/Scriptler.hpp"
+#include "flib/SyncLock.hpp"
+
 int main(int argc, char* argv[]) {
 #if defined(_DEBUG) & defined(_MSC_VER)
   _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
