@@ -12,23 +12,8 @@
       "inheritEnvironments": [ "msvc_x64" ],
       "variables": [
         {
-          "name": "CMAKE_ARCHIVE_OUTPUT_DIRECTORY",
+          "name": "OUTPUT_DIRECTORY",
           "value": "${projectDir}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
-          "value": "${projectDir}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
-          "value": "${projectDir}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_CXX_FLAGS",
-          "value": "/DWIN32 /D_WINDOWS /GR /EHsc /W4 /WX /std:c++14",
           "type": "STRING"
         }
       ],
@@ -46,23 +31,8 @@
       "inheritEnvironments": [ "msvc_x64" ],
       "variables": [
         {
-          "name": "CMAKE_ARCHIVE_OUTPUT_DIRECTORY",
+          "name": "OUTPUT_DIRECTORY",
           "value": "${projectDir}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
-          "value": "${projectDir}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
-          "value": "${projectDir}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_CXX_FLAGS",
-          "value": "/DWIN32 /D_WINDOWS /GR /EHsc /W4 /WX /std:c++14",
           "type": "STRING"
         }
       ],
@@ -80,23 +50,8 @@
       "inheritEnvironments": [ "msvc_x86" ],
       "variables": [
         {
-          "name": "CMAKE_ARCHIVE_OUTPUT_DIRECTORY",
+          "name": "OUTPUT_DIRECTORY",
           "value": "${projectDir}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
-          "value": "${projectDir}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
-          "value": "${projectDir}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_CXX_FLAGS",
-          "value": "/DWIN32 /D_WINDOWS /GR /EHsc /W4 /WX /std:c++14",
           "type": "STRING"
         }
       ],
@@ -114,23 +69,8 @@
       "inheritEnvironments": [ "msvc_x86" ],
       "variables": [
         {
-          "name": "CMAKE_ARCHIVE_OUTPUT_DIRECTORY",
+          "name": "OUTPUT_DIRECTORY",
           "value": "${projectDir}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
-          "value": "${projectDir}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
-          "value": "${projectDir}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_CXX_FLAGS",
-          "value": "/DWIN32 /D_WINDOWS /GR /EHsc /W4 /WX /std:c++14",
           "type": "STRING"
         }
       ],
@@ -157,28 +97,8 @@
       "addressSanitizerRuntimeFlags": "detect_leaks=0",
       "variables": [
         {
-          "name": "CMAKE_ARCHIVE_OUTPUT_DIRECTORY",
+          "name": "OUTPUT_DIRECTORY",
           "value": "$HOME/${projectDirName}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
-          "value": "$HOME/${projectDirName}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
-          "value": "$HOME/${projectDirName}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_CXX_FLAGS",
-          "value": "-std=c++11 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_EXE_LINKER_FLAGS",
-          "value": "-Wl,-O1,-pie,--as-needed,--fatal-warnings,-rpath,.",
           "type": "STRING"
         }
       ],
@@ -205,28 +125,8 @@
       "addressSanitizerRuntimeFlags": "detect_leaks=0",
       "variables": [
         {
-          "name": "CMAKE_ARCHIVE_OUTPUT_DIRECTORY",
+          "name": "OUTPUT_DIRECTORY",
           "value": "$HOME/${projectDirName}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
-          "value": "$HOME/${projectDirName}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
-          "value": "$HOME/${projectDirName}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_CXX_FLAGS",
-          "value": "-std=c++11 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_EXE_LINKER_FLAGS",
-          "value": "-Wl,-O1,-pie,--as-needed,--fatal-warnings,-rpath,.",
           "type": "STRING"
         }
       ],
@@ -253,28 +153,8 @@
       "addressSanitizerRuntimeFlags": "detect_leaks=0",
       "variables": [
         {
-          "name": "CMAKE_ARCHIVE_OUTPUT_DIRECTORY",
+          "name": "OUTPUT_DIRECTORY",
           "value": "$HOME/${projectDirName}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
-          "value": "$HOME/${projectDirName}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
-          "value": "$HOME/${projectDirName}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_CXX_FLAGS",
-          "value": "-std=c++11 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_EXE_LINKER_FLAGS",
-          "value": "-Wl,-O1,-pie,--as-needed,--fatal-warnings,-rpath,.",
           "type": "STRING"
         }
       ],
@@ -301,28 +181,8 @@
       "addressSanitizerRuntimeFlags": "detect_leaks=0",
       "variables": [
         {
-          "name": "CMAKE_ARCHIVE_OUTPUT_DIRECTORY",
+          "name": "OUTPUT_DIRECTORY",
           "value": "$HOME/${projectDirName}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_LIBRARY_OUTPUT_DIRECTORY",
-          "value": "$HOME/${projectDirName}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_RUNTIME_OUTPUT_DIRECTORY",
-          "value": "$HOME/${projectDirName}/out/build/${name}",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_CXX_FLAGS",
-          "value": "-std=c++11 -fPIE -fvisibility=hidden -pipe -Wpedantic -Wall -Wextra -Werror -Wshadow -Wconversion",
-          "type": "STRING"
-        },
-        {
-          "name": "CMAKE_EXE_LINKER_FLAGS",
-          "value": "-Wl,-O1,-pie,--as-needed,--fatal-warnings,-rpath,.",
           "type": "STRING"
         }
       ],
