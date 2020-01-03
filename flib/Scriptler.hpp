@@ -29,6 +29,7 @@
 #include <regex>
 #include <string>
 #include <stdexcept>
+#include <thread>
 
 namespace flib
 {
@@ -173,6 +174,7 @@ void flib::Scriptler::Start(Stream& scriptStream, const std::string& tokenPatter
     if (command)
     {
       command(tokens);
+      std::this_thread::yield();
     }
   }
   mState = State::Idle;

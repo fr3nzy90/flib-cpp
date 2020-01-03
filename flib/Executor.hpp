@@ -31,6 +31,7 @@
 #include <memory>
 #include <mutex>
 #include <stdexcept>
+#include <thread>
 #include <tuple>
 
 namespace flib
@@ -252,5 +253,6 @@ void flib::Executor::AsyncProcess(void)
     mTasks.pop_front();
     tasksAccessGuard.unlock();
     task();
+    std::this_thread::yield();
   }
 }

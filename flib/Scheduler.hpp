@@ -26,6 +26,7 @@
 #include <future>
 #include <mutex>
 #include <stdexcept>
+#include <thread>
 
 namespace flib
 {
@@ -171,6 +172,7 @@ void flib::Scheduler::AsyncProcess(void)
         mState = State::Idle;
       }
       configuration.event();
+      std::this_thread::yield();
     }
     while (State::Active == mState)
     {
@@ -190,6 +192,7 @@ void flib::Scheduler::AsyncProcess(void)
       if (State::Active == mState)
       {
         configuration.event();
+        std::this_thread::yield();
       }
     }
   }
