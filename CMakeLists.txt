@@ -68,5 +68,7 @@ find_package(FLib REQUIRED HINTS "${CMAKE_SOURCE_DIR}/flib")
 
 include_directories("${FLib_INCLUDE_DIRS}"
                     "${Catch_INCLUDE_DIRS}")
-
+                    
 add_subdirectory("${CMAKE_SOURCE_DIR}/tests")
+add_subdirectory("${CMAKE_SOURCE_DIR}/examples/pluginLib")
+add_subdirectory("${CMAKE_SOURCE_DIR}/examples/pluginApp")
