@@ -1,9 +1,7 @@
 #include <iostream>
 
-#include "flib/PluginManager.hpp"
+#include "PluginManager.hpp"
 #include "TestAPI.hpp"
-
-using namespace flib;
 
 int main()
 {
@@ -15,10 +13,10 @@ int main()
   try
   {
     {
-      PluginManager::CreateUniquePlugin<TestAPI>(modulePath)->SayHi();
+      PluginManager::CreateShared<TestAPI>(modulePath)->SayHi();
     }
     {
-      PluginManager::CreateSharedPlugin<TestAPI>(modulePath)->SayHi();
+      PluginManager::CreateUnique<TestAPI>(modulePath)->SayHi();
     }
   }
   catch (const std::exception& e)
