@@ -1,13 +1,17 @@
 #pragma once
 
+#include <string>
+
 #include "TestAPI.hpp"
 
 class TestClass
   : public TestAPI
 {
 public:
-  TestClass(void);
+  TestClass(const std::string& name);
   ~TestClass(void);
 
   void SayHi(void) override;
+private:
+  const std::string mName;
 };

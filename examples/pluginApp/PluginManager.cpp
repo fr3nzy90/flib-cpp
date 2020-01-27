@@ -4,7 +4,8 @@
 
 using namespace flib;
 
-std::tuple<PluginManager::Creator, PluginManager::Deleter> PluginManager::GetPlugin(const std::string& filepath)
+std::tuple<PluginManager::Constructor, PluginManager::Destructor> PluginManager::GetPlugin(const std::string& filepath,
+  const std::string& constructorName, const std::string& destructorName)
 {
-  return plugin::GetPlugin(filepath);
+  return plugin::GetPlugin(filepath, constructorName, destructorName);
 }

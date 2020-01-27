@@ -12,7 +12,12 @@
 
 extern "C" API void* CreatePluginInstance(void)
 {
-  return new TestClass();
+  return new TestClass("CreatePluginInstance");
+}
+
+extern "C" API void* CreatePluginInstance2(void)
+{
+  return new TestClass("CreatePluginInstance2");
 }
 
 extern "C" API void DestroyPluginInstance(void* ptr)
@@ -20,17 +25,23 @@ extern "C" API void DestroyPluginInstance(void* ptr)
   delete static_cast<TestClass*>(ptr);
 }
 
-TestClass::TestClass(void)
+extern "C" API void DestroyPluginInstance2(void* ptr)
 {
-  std::cout << "TestClass\n";
+  delete static_cast<TestClass*>(ptr);
+}
+
+TestClass::TestClass(const std::string& name)
+  : mName(name)
+{
+  std::cout << "TestClass via \"" + mName + "\"\n";
 }
 
 TestClass::~TestClass(void)
 {
-  std::cout << "~TestClass\n";
+  std::cout << "~TestClass via \"" + mName + "\"\n";
 }
 
 void TestClass::SayHi(void)
 {
-  std::cout << "Hello\n";
+  std::cout << "SayHi via \"" + mName + "\"\n";
 }
