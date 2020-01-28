@@ -1,4 +1,4 @@
-#include "flib/PluginManager.hpp"
+#include "flib/Plugins.hpp"
 
 #include "PluginManager.hpp"
 
