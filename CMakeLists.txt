@@ -72,3 +72,4 @@ include_directories("${FLib_INCLUDE_DIRS}"
 add_subdirectory("${CMAKE_SOURCE_DIR}/tests")
 add_subdirectory("${CMAKE_SOURCE_DIR}/examples/pluginLib")
 add_subdirectory("${CMAKE_SOURCE_DIR}/examples/pluginApp")
+add_subdirectory("${CMAKE_SOURCE_DIR}/examples/waitQueueApp")

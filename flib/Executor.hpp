@@ -43,8 +43,7 @@ namespace flib
     using Task = std::function<void(void)>;
     using Token = std::weak_ptr<void>;
 
-    explicit inline Executor(const bool enabled = true, const std::size_t workerCount = 1,
-      const std::size_t taskLimit = -1);
+    explicit inline Executor(const bool enabled = true, const std::size_t workerCount = 1);
     inline Executor(const Executor&) = delete;
     inline Executor(Executor&&) = default;
     inline ~Executor(void) noexcept;
@@ -55,12 +54,11 @@ namespace flib
     inline void Disable(void);
     inline void Enable(void);
     inline Token Invoke(const Task& task, const Priority priority = 0);
+    inline Token Invoke(Task&& task, const Priority priority = 0);
     inline bool IsEmpty(void) const;
     inline bool IsEnabled(void) const;
-    inline void SetTaskLimit(const std::size_t taskLimit = -1);
     inline void SetWorkerCount(const std::size_t workerCount);
     inline std::size_t TaskCount(void) const;
-    inline std::size_t TaskLimit(void) const;
     inline std::size_t WorkerCount(void) const;
 
   private:
@@ -75,21 +73,19 @@ namespace flib
 
     const std::chrono::milliseconds mDestructionTimeout;
     std::atomic<State> mState;
-    std::atomic<std::size_t> mTaskLimit;
+    std::condition_variable mWaitCondition;
     std::list<std::shared_ptr<std::tuple<Task, Priority>>> mTasks;
     mutable std::recursive_mutex mTasksAccessLock;
-    std::condition_variable mWaitCondition;
-    mutable std::recursive_mutex mWorkersAccessLock;
     std::list<std::future<void>> mWorkers;
+    mutable std::recursive_mutex mWorkersAccessLock;
   };
 }
 
 // IMPLEMENTATION
 
-flib::Executor::Executor(const bool enabled, const std::size_t workerCount, const std::size_t taskLimit)
+flib::Executor::Executor(const bool enabled, const std::size_t workerCount)
   : mDestructionTimeout(std::chrono::milliseconds(50)),
   mState(enabled ? State::Active : State::Idle),
-  mTaskLimit(taskLimit),
   mWorkers(workerCount)
 {
   for (auto& worker : mWorkers)
@@ -141,38 +137,30 @@ flib::Executor::Token flib::Executor::Invoke(const Task& task, const Priority pr
   {
     throw std::invalid_argument("Invalid task");
   }
-  auto invocation = std::make_shared<decltype(mTasks)::value_type::element_type>(task, priority);
   std::lock_guard<decltype(mTasksAccessLock)> tasksAccessGuard(mTasksAccessLock);
-  if (0 == priority)
-  {
-    if (mTasks.size() >= mTaskLimit)
+  auto result = mTasks.emplace(0 == priority ? mTasks.cend() : std::upper_bound(mTasks.cbegin(), mTasks.cend(),
+    priority, [](const decltype(priority)& value, const decltype(mTasks)::value_type& element)
     {
-      throw std::runtime_error("Task not scheduled for invocation due to task limit");
-    }
-    mTasks.push_back(invocation);
-  }
-  else
-  {
-    auto it = std::upper_bound(mTasks.cbegin(), mTasks.cend(), priority,
-      [](const decltype(priority)& value, const decltype(mTasks)::value_type& element)
-      {
-        return value > std::get<1>(*element);
-      });
-    if (mTasks.size() >= mTaskLimit)
-    {
-      if (mTasks.cend() == it)
-      {
-        throw std::runtime_error("Task not scheduled for invocation due to task limit");
-      }
-      else
-      {
-        mTasks.pop_back();
-      }
-    }
-    mTasks.insert(it, invocation);
-  }
+      return value > std::get<1>(*element);
+    }), std::make_shared<decltype(mTasks)::value_type::element_type>(task, priority));
   mWaitCondition.notify_one();
-  return invocation;
+  return *result;
+}
+
+flib::Executor::Token flib::Executor::Invoke(Task&& task, const Priority priority)
+{
+  if (!task)
+  {
+    throw std::invalid_argument("Invalid task");
+  }
+  std::lock_guard<decltype(mTasksAccessLock)> tasksAccessGuard(mTasksAccessLock);
+  auto result = mTasks.emplace(0 == priority ? mTasks.cend() : std::upper_bound(mTasks.cbegin(), mTasks.cend(),
+    priority, [](const decltype(priority)& value, const decltype(mTasks)::value_type& element)
+    {
+      return value > std::get<1>(*element);
+    }), std::make_shared<decltype(mTasks)::value_type::element_type>(std::move(task), priority));
+  mWaitCondition.notify_one();
+  return *result;
 }
 
 bool flib::Executor::IsEmpty(void) const
@@ -184,11 +172,6 @@ bool flib::Executor::IsEmpty(void) const
 bool flib::Executor::IsEnabled(void) const
 {
   return State::Active == mState;
-}
-
-void flib::Executor::SetTaskLimit(const std::size_t taskLimit)
-{
-  mTaskLimit = taskLimit;
 }
 
 void flib::Executor::SetWorkerCount(const std::size_t workerCount)
@@ -218,11 +201,6 @@ std::size_t flib::Executor::TaskCount(void) const
 {
   std::lock_guard<decltype(mTasksAccessLock)> tasksAccessGuard(mTasksAccessLock);
   return mTasks.size();
-}
-
-std::size_t flib::Executor::TaskLimit(void) const
-{
-  return mTaskLimit;
 }
 
 std::size_t flib::Executor::WorkerCount(void) const

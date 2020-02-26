@@ -33,14 +33,8 @@ TEST_CASE("Observable<void> tests - Sanity check", "[Observable]")
   flib::Observable<void> observable;
   REQUIRE(0 == observable.SubscriptionCount());
   REQUIRE(observable.IsEmpty());
-  try
-  {
-    observable.Subscribe({});
-    FAIL("Exception not thrown");
-  }
-  catch (const std::invalid_argument&)
-  {
-  }
+  REQUIRE_THROWS_MATCHES(observable.Subscribe({}), std::invalid_argument,
+    Catch::Matchers::Message("Invalid observer"));
 }
 
 TEST_CASE("Observable<bool> tests - Sanity check", "[Observable]")
@@ -48,14 +42,8 @@ TEST_CASE("Observable<bool> tests - Sanity check", "[Observable]")
   flib::Observable<bool> observable;
   REQUIRE(0 == observable.SubscriptionCount());
   REQUIRE(observable.IsEmpty());
-  try
-  {
-    observable.Subscribe({});
-    FAIL("Exception not thrown");
-  }
-  catch (const std::invalid_argument&)
-  {
-  }
+  REQUIRE_THROWS_MATCHES(observable.Subscribe({}), std::invalid_argument,
+    Catch::Matchers::Message("Invalid observer"));
 }
 
 TEST_CASE("Observable<bool, int> tests - Sanity check", "[Observable]")
@@ -63,14 +51,8 @@ TEST_CASE("Observable<bool, int> tests - Sanity check", "[Observable]")
   flib::Observable<bool, int> observable;
   REQUIRE(0 == observable.SubscriptionCount());
   REQUIRE(observable.IsEmpty());
-  try
-  {
-    observable.Subscribe({});
-    FAIL("Exception not thrown");
-  }
-  catch (const std::invalid_argument&)
-  {
-  }
+  REQUIRE_THROWS_MATCHES(observable.Subscribe({}), std::invalid_argument,
+    Catch::Matchers::Message("Invalid observer"));
 }
 
 TEST_CASE("Observable<void> tests - Simple subscription cycle", "[Observable]")

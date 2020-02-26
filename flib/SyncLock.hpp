@@ -33,20 +33,13 @@ namespace flib
     using Duration = std::chrono::milliseconds;
     using Level = uint64_t;
 
-    enum class ReleaseReason
-    {
-      NotLocked,
-      Release,
-      Timeout
-    };
-
     inline SyncLock(void);
     inline SyncLock(const SyncLock&) = delete;
     inline SyncLock(SyncLock&&) = default;
     inline ~SyncLock(void) noexcept;
     inline SyncLock& operator=(const SyncLock&) = delete;
     inline SyncLock& operator=(SyncLock&&) = default;
-    inline ReleaseReason Acquire(const Level level = 1, const Duration& timeout = Duration(0));
+    inline bool Acquire(const Level level = 1, const Duration& timeout = Duration(0));
     inline std::size_t LockCount(void) const;
     inline void Release(void);
     inline void ReleaseAll(void);
@@ -72,19 +65,15 @@ flib::SyncLock::~SyncLock(void) noexcept
   ReleaseAll();
 }
 
-flib::SyncLock::ReleaseReason flib::SyncLock::Acquire(const Level level, const Duration& timeout)
+bool flib::SyncLock::Acquire(const Level level, const Duration& timeout)
 {
   auto unlocked = [this, level]()
   {
     return level <= mLevel;
   };
-  if (unlocked())
-  {
-    return ReleaseReason::NotLocked;
-  }
   std::mutex waitLock;
   std::unique_lock<decltype(waitLock)> waitGuard(waitLock);
-  auto result = ReleaseReason::Release;
+  auto result = true;
   ++mLocks;
   if (Duration(0) == timeout)
   {
@@ -92,7 +81,7 @@ flib::SyncLock::ReleaseReason flib::SyncLock::Acquire(const Level level, const D
   }
   else
   {
-    result = mWaitCondition.wait_for(waitGuard, timeout, unlocked) ? ReleaseReason::Release : ReleaseReason::Timeout;
+    result = mWaitCondition.wait_for(waitGuard, timeout, unlocked);
   }
   --mLocks;
   return result;

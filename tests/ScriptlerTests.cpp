@@ -35,14 +35,8 @@ TEST_CASE("Scriptler tests - Sanity check", "[Scriptler]")
   REQUIRE(scriptler.IsEmpty());
   REQUIRE(!scriptler.IsDefaultSet());
   REQUIRE(!scriptler.IsActive());
-  try
-  {
-    scriptler.Set("unsetCmd");
-    FAIL("Exception not thrown");
-  }
-  catch (const std::invalid_argument&)
-  {
-  }
+  REQUIRE_THROWS_MATCHES(scriptler.Set("unsetCmd"), std::invalid_argument,
+    Catch::Matchers::Message("Nothing to erase - invalid command id"));
 }
 
 TEST_CASE("Scriptler tests - Setting default", "[Scriptler]")
@@ -128,7 +122,7 @@ TEST_CASE("Scriptler tests - Auto start-stop cycle", "[Scriptler]")
     });
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(scriptler.IsActive());
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  task.get();
   REQUIRE(!scriptler.IsActive());
 }
 
@@ -151,7 +145,7 @@ TEST_CASE("Scriptler tests - Manual start-stop cycle", "[Scriptler]")
     });
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(scriptler.IsActive());
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  task.get();
   REQUIRE(!scriptler.IsActive());
   REQUIRE(1 == reference);
 }

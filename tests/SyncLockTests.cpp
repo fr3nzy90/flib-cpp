@@ -29,7 +29,7 @@ TEST_CASE("SyncLock tests - Sanity check", "[SyncLock]")
 {
   flib::SyncLock syncLock;
   REQUIRE(0 == syncLock.LockCount());
-  REQUIRE(flib::SyncLock::ReleaseReason::NotLocked == syncLock.Acquire(0));
+  REQUIRE(syncLock.Acquire(0));
   REQUIRE(0 == syncLock.LockCount());
 }
 
@@ -39,15 +39,14 @@ TEST_CASE("SyncLock tests - Simple release-lock", "[SyncLock]")
   std::atomic<uint32_t> reference(0);
   REQUIRE(0 == syncLock.LockCount());
   syncLock.Release();
-  auto task = std::async(std::launch::async, [&reference, &syncLock]()
+  std::async(std::launch::async, [&reference, &syncLock]()
     {
-      if (flib::SyncLock::ReleaseReason::Timeout != syncLock.Acquire(1, flib::SyncLock::Duration(1000)))
+      if (syncLock.Acquire(1, flib::SyncLock::Duration(1000)))
       {
         ++reference;
       }
     }
-  );
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ).get();
   REQUIRE(0 == syncLock.LockCount());
   REQUIRE(1 == reference);
 }
@@ -60,7 +59,7 @@ TEST_CASE("SyncLock tests - Complex release-lock", "[SyncLock]")
   syncLock.Release();
   auto task = std::async(std::launch::async, [&reference, &syncLock]()
     {
-      if (flib::SyncLock::ReleaseReason::Release == syncLock.Acquire(2, flib::SyncLock::Duration(1000)))
+      if (syncLock.Acquire(2, flib::SyncLock::Duration(1000)))
       {
         ++reference;
       }
@@ -69,7 +68,7 @@ TEST_CASE("SyncLock tests - Complex release-lock", "[SyncLock]")
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(1 == syncLock.LockCount());
   syncLock.Release();
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  task.get();
   REQUIRE(0 == syncLock.LockCount());
   REQUIRE(1 == reference);
 }
@@ -81,7 +80,7 @@ TEST_CASE("SyncLock tests - Simple lock-release", "[SyncLock]")
   REQUIRE(0 == syncLock.LockCount());
   auto task = std::async(std::launch::async, [&reference, &syncLock]()
     {
-      if (flib::SyncLock::ReleaseReason::Release == syncLock.Acquire(2, flib::SyncLock::Duration(1000)))
+      if (syncLock.Acquire(2, flib::SyncLock::Duration(1000)))
       {
         ++reference;
       }
@@ -90,10 +89,9 @@ TEST_CASE("SyncLock tests - Simple lock-release", "[SyncLock]")
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(1 == syncLock.LockCount());
   syncLock.Release();
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(1 == syncLock.LockCount());
   syncLock.Release();
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  task.get();
   REQUIRE(0 == syncLock.LockCount());
   REQUIRE(1 == reference);
 }
@@ -105,7 +103,7 @@ TEST_CASE("SyncLock tests - Complex lock-release", "[SyncLock]")
   REQUIRE(0 == syncLock.LockCount());
   auto task1 = std::async(std::launch::async, [&reference, &syncLock]()
     {
-      if (flib::SyncLock::ReleaseReason::Release == syncLock.Acquire(2, flib::SyncLock::Duration(1000)))
+      if (syncLock.Acquire(2, flib::SyncLock::Duration(1000)))
       {
         ++reference;
       }
@@ -113,7 +111,7 @@ TEST_CASE("SyncLock tests - Complex lock-release", "[SyncLock]")
   );
   auto task2 = std::async(std::launch::async, [&reference, &syncLock]()
     {
-      if (flib::SyncLock::ReleaseReason::Release == syncLock.Acquire(2, flib::SyncLock::Duration(1000)))
+      if (syncLock.Acquire(2, flib::SyncLock::Duration(1000)))
       {
         ++reference;
       }
@@ -121,7 +119,7 @@ TEST_CASE("SyncLock tests - Complex lock-release", "[SyncLock]")
   );
   auto task3 = std::async(std::launch::async, [&reference, &syncLock]()
     {
-      if (flib::SyncLock::ReleaseReason::Release == syncLock.Acquire(3, flib::SyncLock::Duration(1000)))
+      if (syncLock.Acquire(3, flib::SyncLock::Duration(1000)))
       {
         ++reference;
       }
@@ -130,14 +128,14 @@ TEST_CASE("SyncLock tests - Complex lock-release", "[SyncLock]")
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(3 == syncLock.LockCount());
   syncLock.Release();
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(3 == syncLock.LockCount());
   syncLock.Release();
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  task1.get();
+  task2.get();
   REQUIRE(1 == syncLock.LockCount());
   REQUIRE(2 == reference);
   syncLock.Release();
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  task3.get();
   REQUIRE(0 == syncLock.LockCount());
   REQUIRE(3 == reference);
 }
@@ -149,7 +147,7 @@ TEST_CASE("SyncLock tests - Simple lock-release all", "[SyncLock]")
   REQUIRE(0 == syncLock.LockCount());
   auto task = std::async(std::launch::async, [&reference, &syncLock]()
     {
-      if (flib::SyncLock::ReleaseReason::Release == syncLock.Acquire(2, flib::SyncLock::Duration(1000)))
+      if (syncLock.Acquire(2, flib::SyncLock::Duration(1000)))
       {
         ++reference;
       }
@@ -158,7 +156,7 @@ TEST_CASE("SyncLock tests - Simple lock-release all", "[SyncLock]")
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(1 == syncLock.LockCount());
   syncLock.ReleaseAll();
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  task.get();
   REQUIRE(0 == syncLock.LockCount());
   REQUIRE(1 == reference);
 }
@@ -170,7 +168,7 @@ TEST_CASE("SyncLock tests - Complex lock-release all", "[SyncLock]")
   REQUIRE(0 == syncLock.LockCount());
   auto task1 = std::async(std::launch::async, [&reference, &syncLock]()
     {
-      if (flib::SyncLock::ReleaseReason::Release == syncLock.Acquire(2, flib::SyncLock::Duration(1000)))
+      if (syncLock.Acquire(2, flib::SyncLock::Duration(1000)))
       {
         ++reference;
       }
@@ -178,7 +176,7 @@ TEST_CASE("SyncLock tests - Complex lock-release all", "[SyncLock]")
   );
   auto task2 = std::async(std::launch::async, [&reference, &syncLock]()
     {
-      if (flib::SyncLock::ReleaseReason::Release == syncLock.Acquire(2, flib::SyncLock::Duration(1000)))
+      if (syncLock.Acquire(2, flib::SyncLock::Duration(1000)))
       {
         ++reference;
       }
@@ -186,7 +184,7 @@ TEST_CASE("SyncLock tests - Complex lock-release all", "[SyncLock]")
   );
   auto task3 = std::async(std::launch::async, [&reference, &syncLock]()
     {
-      if (flib::SyncLock::ReleaseReason::Release == syncLock.Acquire(3, flib::SyncLock::Duration(1000)))
+      if (syncLock.Acquire(3, flib::SyncLock::Duration(1000)))
       {
         ++reference;
       }
@@ -195,7 +193,9 @@ TEST_CASE("SyncLock tests - Complex lock-release all", "[SyncLock]")
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(3 == syncLock.LockCount());
   syncLock.ReleaseAll();
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  task1.get();
+  task2.get();
+  task3.get();
   REQUIRE(0 == syncLock.LockCount());
   REQUIRE(3 == reference);
 }
@@ -207,7 +207,7 @@ TEST_CASE("SyncLock tests - Resetting", "[SyncLock]")
   REQUIRE(0 == syncLock.LockCount());
   auto task = std::async(std::launch::async, [&reference, &syncLock]()
     {
-      if (flib::SyncLock::ReleaseReason::Release == syncLock.Acquire(2, flib::SyncLock::Duration(1000)))
+      if (syncLock.Acquire(2, flib::SyncLock::Duration(1000)))
       {
         ++reference;
       }
@@ -216,14 +216,12 @@ TEST_CASE("SyncLock tests - Resetting", "[SyncLock]")
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(1 == syncLock.LockCount());
   syncLock.Release();
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(1 == syncLock.LockCount());
   syncLock.Reset();
   syncLock.Release();
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(1 == syncLock.LockCount());
   syncLock.Release();
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  task.get();
   REQUIRE(0 == syncLock.LockCount());
   REQUIRE(1 == reference);
 }
@@ -235,7 +233,7 @@ TEST_CASE("SyncLock tests - Lock timeout", "[SyncLock]")
   REQUIRE(0 == syncLock.LockCount());
   auto task = std::async(std::launch::async, [&reference, &syncLock]()
     {
-      if (flib::SyncLock::ReleaseReason::Timeout == syncLock.Acquire(1, flib::SyncLock::Duration(100)))
+      if (!syncLock.Acquire(1, flib::SyncLock::Duration(100)))
       {
         ++reference;
       }
@@ -243,7 +241,7 @@ TEST_CASE("SyncLock tests - Lock timeout", "[SyncLock]")
   );
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(1 == syncLock.LockCount());
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  task.get();
   REQUIRE(0 == syncLock.LockCount());
   REQUIRE(1 == reference);
 }

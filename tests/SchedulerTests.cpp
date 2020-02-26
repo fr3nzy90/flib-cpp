@@ -29,22 +29,9 @@ TEST_CASE("Scheduler tests - Sanity check", "[Scheduler]")
   flib::Scheduler scheduler;
   auto event = []() {};
   REQUIRE(!scheduler.IsScheduled());
-  try
-  {
-    scheduler.Schedule({}, flib::Scheduler::Duration(100));
-    FAIL("Exception not thrown");
-  }
-  catch (const std::invalid_argument&)
-  {
-  }
-  try
-  {
-    scheduler.Reschedule();
-    FAIL("Exception not thrown");
-  }
-  catch (const std::runtime_error&)
-  {
-  }
+  REQUIRE_THROWS_MATCHES(scheduler.Schedule({}, flib::Scheduler::Duration(100)), std::invalid_argument,
+    Catch::Matchers::Message("Invalid event"));
+  REQUIRE_THROWS_MATCHES(scheduler.Reschedule(), std::runtime_error, Catch::Matchers::Message("Invalid event"));
   scheduler.Schedule(event, flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   scheduler.Cancel();

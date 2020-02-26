@@ -34,6 +34,7 @@
 #include "flib/Scheduler.hpp"
 #include "flib/Scriptler.hpp"
 #include "flib/SyncLock.hpp"
+#include "flib/WaitQueue.hpp"
 
 int main(int argc, char* argv[]) {
 #if defined(_DEBUG) & defined(_MSC_VER)

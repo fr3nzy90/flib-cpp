@@ -71,7 +71,7 @@ TEST_CASE("Endianess tests - 8 byte swap", "[Endianess]")
   REQUIRE(ReverseCompare(&originalValue, &reversedValue));
 }
 
-TEST_CASE("Endianess tests - multi byte swap", "[Endianess]")
+TEST_CASE("Endianess tests - Multi byte swap", "[Endianess]")
 {
   const uint8_t originalValue[] = { 0x01,0x23,0x45,0x67,0x89,0xab,0xcd,0xef };
   uint8_t reversedValue[8];
