@@ -149,7 +149,7 @@ void flib::Scriptler::Start(Stream& scriptStream, const std::string& tokenPatter
   while (State::Active == mState && !scriptStream.eof())
   {
     std::getline(scriptStream, commandLine, commandDeliminator);
-    if (!scriptStream.good())
+    if (!scriptStream)
     {
       continue;
     }
