@@ -172,17 +172,6 @@ T flib::WaitQueue<T>::WaitedPop(const Duration& timeout)
   std::unique_lock<decltype(mObjectsAccessLock)> objectsAccessGuard(mObjectsAccessLock, std::defer_lock);
   while (mEnabled)
   {
-    if (Duration(0) == timeout)
-    {
-      mWaitCondition.wait(waitGuard, notEmpty);
-    }
-    else
-    {
-      if (!mWaitCondition.wait_until(waitGuard, timepoint, notEmpty))
-      {
-        throw std::runtime_error("WaitQueue element retrieval has timed out");
-      }
-    }
     objectsAccessGuard.lock();
     if (!mObjects.empty())
     {
@@ -191,6 +180,14 @@ T flib::WaitQueue<T>::WaitedPop(const Duration& timeout)
       return object;
     }
     objectsAccessGuard.unlock();
+    if (Duration(0) == timeout)
+    {
+      mWaitCondition.wait(waitGuard, notEmpty);
+    }
+    else if (!mWaitCondition.wait_until(waitGuard, timepoint, notEmpty))
+    {
+      throw std::runtime_error("WaitQueue element retrieval has timed out");
+    }
   }
   throw std::runtime_error("WaitQueue is disabled");
 }
