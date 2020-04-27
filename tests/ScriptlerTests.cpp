@@ -27,6 +27,8 @@
 
 #include "flib/Scriptler.hpp"
 
+#include "Tools.hpp"
+
 TEST_CASE("Scriptler tests - Sanity check", "[Scriptler]")
 {
   flib::Scriptler scriptler;
@@ -113,14 +115,14 @@ TEST_CASE("Scriptler tests - Auto start-stop cycle", "[Scriptler]")
   stream << "command\n";
   scriptler.SetDefault([](const flib::Scriptler::Tokens&)
     {
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      ::SleepFor(std::chrono::milliseconds(100));
     });
   REQUIRE(!scriptler.IsActive());
   auto task = std::async(std::launch::async, [&scriptler, &stream]()
     {
       scriptler.Start(stream);
     });
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(scriptler.IsActive());
   task.get();
   REQUIRE(!scriptler.IsActive());
@@ -135,7 +137,7 @@ TEST_CASE("Scriptler tests - Manual start-stop cycle", "[Scriptler]")
   scriptler.SetDefault([&reference, &scriptler](const flib::Scriptler::Tokens&)
     {
       ++reference;
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      ::SleepFor(std::chrono::milliseconds(100));
       scriptler.Stop();
     });
   REQUIRE(!scriptler.IsActive());
@@ -143,7 +145,7 @@ TEST_CASE("Scriptler tests - Manual start-stop cycle", "[Scriptler]")
     {
       scriptler.Start(stream);
     });
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(scriptler.IsActive());
   task.get();
   REQUIRE(!scriptler.IsActive());

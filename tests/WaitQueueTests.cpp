@@ -28,6 +28,8 @@
 
 #include "flib/WaitQueue.hpp"
 
+#include "Tools.hpp"
+
 TEST_CASE("WaitQueue tests - Sanity check", "[WaitQueue]")
 {
   flib::WaitQueue<int> queue;
@@ -178,7 +180,7 @@ TEST_CASE("WaitQueue tests - Queue timeout", "[WaitQueue]")
     Catch::Matchers::Message("WaitQueue element retrieval has timed out"));
   auto task = std::async(std::launch::async, [&queue]()
     {
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      ::SleepFor(std::chrono::milliseconds(100));
       queue.Push(1);
     }
   );
@@ -199,7 +201,7 @@ TEST_CASE("WaitQueue tests - Queue disabling cycle", "[WaitQueue]")
   REQUIRE(1 == queue.WaitedPop());
   std::async(std::launch::async, [&queue]()
     {
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      ::SleepFor(std::chrono::milliseconds(100));
       queue.Disable();
     }
   ).get();
@@ -213,7 +215,7 @@ TEST_CASE("WaitQueue tests - Queue disabling cycle", "[WaitQueue]")
   REQUIRE(2 == queue.WaitedPop());
   std::async(std::launch::async, [&queue]()
     {
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      ::SleepFor(std::chrono::milliseconds(100));
       queue.Disable();
     }
   ).get();

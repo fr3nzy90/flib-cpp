@@ -25,6 +25,8 @@
 
 #include "flib/SyncLock.hpp"
 
+#include "Tools.hpp"
+
 TEST_CASE("SyncLock tests - Sanity check", "[SyncLock]")
 {
   flib::SyncLock syncLock;
@@ -65,7 +67,7 @@ TEST_CASE("SyncLock tests - Complex release-lock", "[SyncLock]")
       }
     }
   );
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(1 == syncLock.LockCount());
   syncLock.Release();
   task.get();
@@ -86,7 +88,7 @@ TEST_CASE("SyncLock tests - Simple lock-release", "[SyncLock]")
       }
     }
   );
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(1 == syncLock.LockCount());
   syncLock.Release();
   REQUIRE(1 == syncLock.LockCount());
@@ -125,7 +127,7 @@ TEST_CASE("SyncLock tests - Complex lock-release", "[SyncLock]")
       }
     }
   );
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(3 == syncLock.LockCount());
   syncLock.Release();
   REQUIRE(3 == syncLock.LockCount());
@@ -153,7 +155,7 @@ TEST_CASE("SyncLock tests - Simple lock-release all", "[SyncLock]")
       }
     }
   );
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(1 == syncLock.LockCount());
   syncLock.ReleaseAll();
   task.get();
@@ -190,7 +192,7 @@ TEST_CASE("SyncLock tests - Complex lock-release all", "[SyncLock]")
       }
     }
   );
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(3 == syncLock.LockCount());
   syncLock.ReleaseAll();
   task1.get();
@@ -213,7 +215,7 @@ TEST_CASE("SyncLock tests - Resetting", "[SyncLock]")
       }
     }
   );
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(1 == syncLock.LockCount());
   syncLock.Release();
   REQUIRE(1 == syncLock.LockCount());
@@ -239,7 +241,7 @@ TEST_CASE("SyncLock tests - Lock timeout", "[SyncLock]")
       }
     }
   );
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(1 == syncLock.LockCount());
   task.get();
   REQUIRE(0 == syncLock.LockCount());

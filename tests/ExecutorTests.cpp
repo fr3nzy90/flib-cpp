@@ -24,6 +24,8 @@
 
 #include "flib/Executor.hpp"
 
+#include "Tools.hpp"
+
 #if defined(_MSC_VER)
 #  pragma warning(push)
 #  pragma warning(disable:26444)
@@ -87,21 +89,21 @@ TEST_CASE("Executor tests - Single worker invoking", "[Executor]")
   auto task = [&reference]()
   {
     ++reference;
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    ::SleepFor(std::chrono::milliseconds(100));
   };
   auto task2 = [&reference]()
   {
     ++reference;
   };
   executor.Invoke(task);
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(1 == reference);
   REQUIRE(0 == executor.TaskCount());
   for (auto i = 0; i < 3; ++i)
   {
     executor.Invoke(task2);
   }
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  ::SleepFor(std::chrono::milliseconds(200));
   REQUIRE(4 == reference);
   REQUIRE(0 == executor.TaskCount());
 }
@@ -113,18 +115,18 @@ TEST_CASE("Executor tests - Multi worker invoking", "[Executor]")
   auto task = [&reference]()
   {
     ++reference;
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    ::SleepFor(std::chrono::milliseconds(100));
   };
   auto task2 = [&reference]()
   {
     ++reference;
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    ::SleepFor(std::chrono::milliseconds(200));
   };
   for (auto i = 0; i < 3; ++i)
   {
     executor.Invoke(task);
   }
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(3 == reference);
   REQUIRE(0 == executor.TaskCount());
   for (auto i = 0; i < 9; ++i)
@@ -132,7 +134,7 @@ TEST_CASE("Executor tests - Multi worker invoking", "[Executor]")
     executor.Invoke(task2);
   }
   REQUIRE(9 == executor.TaskCount());
-  std::this_thread::sleep_for(std::chrono::milliseconds(700));
+  ::SleepFor(std::chrono::milliseconds(700));
   REQUIRE(12 == reference);
   REQUIRE(0 == executor.TaskCount());
 }
@@ -144,14 +146,14 @@ TEST_CASE("Executor tests - Clearing", "[Executor]")
   auto task = [&reference]()
   {
     ++reference;
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    ::SleepFor(std::chrono::milliseconds(100));
   };
   auto task2 = [&reference]()
   {
     ++reference;
   };
   executor.Invoke(task);
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(1 == reference);
   REQUIRE(0 == executor.TaskCount());
   for (auto i = 0; i < 3; ++i)
@@ -161,7 +163,7 @@ TEST_CASE("Executor tests - Clearing", "[Executor]")
   REQUIRE(3 == executor.TaskCount());
   executor.Clear();
   REQUIRE(0 == executor.TaskCount());
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  ::SleepFor(std::chrono::milliseconds(200));
   REQUIRE(1 == reference);
   REQUIRE(0 == executor.TaskCount());
 }
@@ -173,7 +175,7 @@ TEST_CASE("Executor tests - Task cancellation", "[Executor]")
   auto task = [&reference]()
   {
     ++reference;
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    ::SleepFor(std::chrono::milliseconds(100));
   };
   auto token1 = executor.Invoke(task);
   auto token2 = executor.Invoke(task);
@@ -188,13 +190,13 @@ TEST_CASE("Executor tests - Task cancellation", "[Executor]")
   auto token4 = executor.Invoke(task);
   REQUIRE(4 == executor.TaskCount());
   executor.Enable();
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(2 == executor.TaskCount());
   REQUIRE(2 == reference);
   executor.Cancel(token1);
   executor.Cancel(token4);
   REQUIRE(1 == executor.TaskCount());
-  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  ::SleepFor(std::chrono::milliseconds(100));
   REQUIRE(0 == executor.TaskCount());
   REQUIRE(3 == reference);
 }
@@ -206,7 +208,7 @@ TEST_CASE("Executor tests - Self invoking", "[Executor]")
   auto task = [&reference]()
   {
     ++reference;
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    ::SleepFor(std::chrono::milliseconds(100));
   };
   auto task3 = [&reference]()
   {
@@ -218,7 +220,7 @@ TEST_CASE("Executor tests - Self invoking", "[Executor]")
     executor.Invoke(task3);
   };
   executor.Invoke(task);
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(1 == reference);
   REQUIRE(0 == executor.TaskCount());
   for (auto i = 0; i < 3; ++i)
@@ -226,7 +228,7 @@ TEST_CASE("Executor tests - Self invoking", "[Executor]")
     executor.Invoke(task2);
   }
   REQUIRE(3 == executor.TaskCount());
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  ::SleepFor(std::chrono::milliseconds(200));
   REQUIRE(7 == reference);
   REQUIRE(0 == executor.TaskCount());
 }
@@ -240,18 +242,18 @@ TEST_CASE("Executor tests - Simple disabling executor cycle", "[Executor]")
     ++reference;
   };
   executor.Invoke(task);
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(0 == reference);
   REQUIRE(1 == executor.TaskCount());
   executor.Enable();
   REQUIRE(executor.IsEnabled());
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(1 == reference);
   REQUIRE(0 == executor.TaskCount());
   executor.Disable();
   REQUIRE(!executor.IsEnabled());
   executor.Invoke(task);
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(1 == reference);
   REQUIRE(1 == executor.TaskCount());
 }
@@ -268,12 +270,12 @@ TEST_CASE("Executor tests - Complex disabling executor cycle", "[Executor]")
   {
     executor.Invoke(task);
   }
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(0 == reference);
   REQUIRE(3 == executor.TaskCount());
   executor.Enable();
   REQUIRE(executor.IsEnabled());
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(3 == reference);
   REQUIRE(0 == executor.TaskCount());
   executor.Disable();
@@ -282,7 +284,7 @@ TEST_CASE("Executor tests - Complex disabling executor cycle", "[Executor]")
   {
     executor.Invoke(task);
   }
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(3 == reference);
   REQUIRE(3 == executor.TaskCount());
 }
@@ -296,18 +298,18 @@ TEST_CASE("Executor tests - Simple enabling executor cycle", "[Executor]")
     ++reference;
   };
   executor.Invoke(task);
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(1 == reference);
   REQUIRE(0 == executor.TaskCount());
   executor.Disable();
   REQUIRE(!executor.IsEnabled());
   executor.Invoke(task);
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(1 == reference);
   REQUIRE(1 == executor.TaskCount());
   executor.Enable();
   REQUIRE(executor.IsEnabled());
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(2 == reference);
   REQUIRE(0 == executor.TaskCount());
 }
@@ -324,7 +326,7 @@ TEST_CASE("Executor tests - Complex enabling executor cycle", "[Executor]")
   {
     executor.Invoke(task);
   }
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(3 == reference);
   REQUIRE(0 == executor.TaskCount());
   executor.Disable();
@@ -333,12 +335,12 @@ TEST_CASE("Executor tests - Complex enabling executor cycle", "[Executor]")
   {
     executor.Invoke(task);
   }
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(3 == reference);
   REQUIRE(3 == executor.TaskCount());
   executor.Enable();
   REQUIRE(executor.IsEnabled());
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(6 == reference);
   REQUIRE(0 == executor.TaskCount());
 }
@@ -350,24 +352,24 @@ TEST_CASE("Executor tests - Task prioritization", "[Executor]")
   auto task = [&reference]()
   {
     ++reference;
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    ::SleepFor(std::chrono::milliseconds(50));
   };
   auto task2 = [&reference]()
   {
     reference = reference * 2;
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    ::SleepFor(std::chrono::milliseconds(50));
   };
   auto task3 = [&reference]()
   {
     reference += 3;
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    ::SleepFor(std::chrono::milliseconds(50));
   };
   executor.Invoke(task);
   executor.Invoke(task2, 1);
   executor.Invoke(task3, 1);
   REQUIRE(3 == executor.TaskCount());
   executor.Enable();
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  ::SleepFor(std::chrono::milliseconds(200));
   REQUIRE(0 == executor.TaskCount());
   REQUIRE(6 == reference);
   executor.Invoke([&executor, &task, &task2, &task3]()
@@ -375,11 +377,11 @@ TEST_CASE("Executor tests - Task prioritization", "[Executor]")
       executor.Invoke(task, 1);
       executor.Invoke(task2, 2);
       executor.Invoke(task3, 3);
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      ::SleepFor(std::chrono::milliseconds(100));
     });
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(3 == executor.TaskCount());
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  ::SleepFor(std::chrono::milliseconds(200));
   REQUIRE(0 == executor.TaskCount());
   REQUIRE(19 == reference);
 }
@@ -396,18 +398,18 @@ TEST_CASE("Executor tests - Reconfiguring workers", "[Executor]")
   auto task = [&reference]()
   {
     ++reference;
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    ::SleepFor(std::chrono::milliseconds(100));
   };
   auto task2 = [&reference]()
   {
     ++reference;
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    ::SleepFor(std::chrono::milliseconds(200));
   };
   for (auto i = 0; i < 3; ++i)
   {
     executor.Invoke(task);
   }
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(3 == reference);
   REQUIRE(0 == executor.TaskCount());
   for (auto i = 0; i < 9; ++i)
@@ -415,7 +417,7 @@ TEST_CASE("Executor tests - Reconfiguring workers", "[Executor]")
     executor.Invoke(task2);
   }
   REQUIRE(9 == executor.TaskCount());
-  std::this_thread::sleep_for(std::chrono::milliseconds(700));
+  ::SleepFor(std::chrono::milliseconds(700));
   REQUIRE(12 == reference);
   REQUIRE(0 == executor.TaskCount());
 }

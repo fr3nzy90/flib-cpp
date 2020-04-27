@@ -24,6 +24,8 @@
 
 #include "flib/Scheduler.hpp"
 
+#include "Tools.hpp"
+
 TEST_CASE("Scheduler tests - Sanity check", "[Scheduler]")
 {
   flib::Scheduler scheduler;
@@ -48,7 +50,7 @@ TEST_CASE("Scheduler tests - Immediate execution", "[Scheduler]")
   };
   REQUIRE(!scheduler.IsScheduled());
   scheduler.Schedule(event, flib::Scheduler::Duration(0));
-  std::this_thread::sleep_for(flib::Scheduler::Duration(50));
+  ::SleepFor(flib::Scheduler::Duration(50));
   REQUIRE(!scheduler.IsScheduled());
   REQUIRE(1 == reference);
 }
@@ -64,10 +66,10 @@ TEST_CASE("Scheduler tests - Delayed execution", "[Scheduler]")
   REQUIRE(!scheduler.IsScheduled());
   scheduler.Schedule(event, flib::Scheduler::Duration(250));
   REQUIRE(scheduler.IsScheduled());
-  std::this_thread::sleep_for(flib::Scheduler::Duration(200));
+  ::SleepFor(flib::Scheduler::Duration(200));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(0 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(!scheduler.IsScheduled());
   REQUIRE(1 == reference);
 }
@@ -79,27 +81,27 @@ TEST_CASE("Scheduler tests - Immediate periodic execution with fixed delay", "[S
   auto event = [&reference]()
   {
     ++reference;
-    std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+    ::SleepFor(flib::Scheduler::Duration(100));
   };
   REQUIRE(!scheduler.IsScheduled());
   scheduler.Schedule(event, flib::Scheduler::Duration(0), flib::Scheduler::Duration(100),
     flib::Scheduler::Type::FixedDelay);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(50));
+  ::SleepFor(flib::Scheduler::Duration(50));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(1 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(1 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(2 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(2 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(3 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(3 == reference);
 }
@@ -111,31 +113,31 @@ TEST_CASE("Scheduler tests - Delayed periodic execution with fixed delay", "[Sch
   auto event = [&reference]()
   {
     ++reference;
-    std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+    ::SleepFor(flib::Scheduler::Duration(100));
   };
   REQUIRE(!scheduler.IsScheduled());
   scheduler.Schedule(event, flib::Scheduler::Duration(250), flib::Scheduler::Duration(100),
     flib::Scheduler::Type::FixedDelay);
   REQUIRE(scheduler.IsScheduled());
-  std::this_thread::sleep_for(flib::Scheduler::Duration(200));
+  ::SleepFor(flib::Scheduler::Duration(200));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(0 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(1 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(1 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(2 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(2 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(3 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(3 == reference);
 }
@@ -147,18 +149,18 @@ TEST_CASE("Scheduler tests - Immediate periodic execution with fixed rate", "[Sc
   auto event = [&reference]()
   {
     ++reference;
-    std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+    ::SleepFor(flib::Scheduler::Duration(100));
   };
   REQUIRE(!scheduler.IsScheduled());
   scheduler.Schedule(event, flib::Scheduler::Duration(0), flib::Scheduler::Duration(100),
     flib::Scheduler::Type::FixedRate);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(50));
+  ::SleepFor(flib::Scheduler::Duration(50));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(1 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(2 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(3 == reference);
 }
@@ -170,22 +172,22 @@ TEST_CASE("Scheduler tests - Delayed periodic execution with fixed rate", "[Sche
   auto event = [&reference]()
   {
     ++reference;
-    std::this_thread::sleep_for(flib::Scheduler::Duration(50));
+    ::SleepFor(flib::Scheduler::Duration(50));
   };
   REQUIRE(!scheduler.IsScheduled());
   scheduler.Schedule(event, flib::Scheduler::Duration(250), flib::Scheduler::Duration(100),
     flib::Scheduler::Type::FixedRate);
   REQUIRE(scheduler.IsScheduled());
-  std::this_thread::sleep_for(flib::Scheduler::Duration(200));
+  ::SleepFor(flib::Scheduler::Duration(200));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(0 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(1 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(2 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(3 == reference);
 }
@@ -197,17 +199,17 @@ TEST_CASE("Scheduler tests - Normal cancellation within immediate execution", "[
   auto event = [&reference]()
   {
     ++reference;
-    std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+    ::SleepFor(flib::Scheduler::Duration(100));
   };
   REQUIRE(!scheduler.IsScheduled());
   scheduler.Schedule(event, flib::Scheduler::Duration(0), flib::Scheduler::Duration(10));
   REQUIRE(scheduler.IsScheduled());
-  std::this_thread::sleep_for(flib::Scheduler::Duration(50));
+  ::SleepFor(flib::Scheduler::Duration(50));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(1 == reference);
   scheduler.Cancel();
   REQUIRE(!scheduler.IsScheduled());
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(1 == reference);
 }
 
@@ -218,21 +220,21 @@ TEST_CASE("Scheduler tests - Normal cancellation within periodic execution", "[S
   auto event = [&reference]()
   {
     ++reference;
-    std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+    ::SleepFor(flib::Scheduler::Duration(100));
   };
   REQUIRE(!scheduler.IsScheduled());
   scheduler.Schedule(event, flib::Scheduler::Duration(0), flib::Scheduler::Duration(100),
     flib::Scheduler::Type::FixedRate);
   REQUIRE(scheduler.IsScheduled());
-  std::this_thread::sleep_for(flib::Scheduler::Duration(50));
+  ::SleepFor(flib::Scheduler::Duration(50));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(1 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(2 == reference);
   scheduler.Cancel();
   REQUIRE(!scheduler.IsScheduled());
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(2 == reference);
 }
 
@@ -248,10 +250,10 @@ TEST_CASE("Scheduler tests - Event scheduler cancellation", "[Scheduler]")
   REQUIRE(!scheduler.IsScheduled());
   scheduler.Schedule(event, flib::Scheduler::Duration(0), flib::Scheduler::Duration(10));
   REQUIRE(scheduler.IsScheduled());
-  std::this_thread::sleep_for(flib::Scheduler::Duration(50));
+  ::SleepFor(flib::Scheduler::Duration(50));
   REQUIRE(!scheduler.IsScheduled());
   REQUIRE(1 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(1 == reference);
 }
 
@@ -272,13 +274,13 @@ TEST_CASE("Scheduler tests - Event scheduler re-scheduling", "[Scheduler]")
   REQUIRE(!scheduler.IsScheduled());
   scheduler.Schedule(event, flib::Scheduler::Duration(0));
   REQUIRE(scheduler.IsScheduled());
-  std::this_thread::sleep_for(flib::Scheduler::Duration(50));
+  ::SleepFor(flib::Scheduler::Duration(50));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(1 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(3 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
   REQUIRE(5 == reference);
 }
@@ -294,23 +296,23 @@ TEST_CASE("Scheduler tests - Scheduler rescheduling", "[Scheduler]")
   REQUIRE(!scheduler.IsScheduled());
   scheduler.Schedule(event, flib::Scheduler::Duration(50));
   REQUIRE(scheduler.IsScheduled());
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(!scheduler.IsScheduled());
   REQUIRE(1 == reference);
   scheduler.Reschedule();
   REQUIRE(scheduler.IsScheduled());
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(!scheduler.IsScheduled());
   REQUIRE(2 == reference);
   scheduler.Schedule(event, flib::Scheduler::Duration(200), flib::Scheduler::Duration(100));
   REQUIRE(scheduler.IsScheduled());
-  std::this_thread::sleep_for(flib::Scheduler::Duration(250));
+  ::SleepFor(flib::Scheduler::Duration(250));
   REQUIRE(3 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(4 == reference);
   scheduler.Reschedule();
-  std::this_thread::sleep_for(flib::Scheduler::Duration(250));
+  ::SleepFor(flib::Scheduler::Duration(250));
   REQUIRE(5 == reference);
-  std::this_thread::sleep_for(flib::Scheduler::Duration(100));
+  ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(6 == reference);
 }
