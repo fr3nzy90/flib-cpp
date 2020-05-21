@@ -10,7 +10,7 @@ void Execute(const std::function<void(void)>& func)
   {
     func();
   }
-  catch (const std::exception & e)
+  catch (const std::exception& e)
   {
     std::cout << e.what() << '\n';
   }
@@ -26,26 +26,32 @@ int main()
   Execute([modulePath]()
     {
       PluginManager::CreateShared<TestAPI>(modulePath)->SayHi();
-    });
+    }
+  );
   Execute([modulePath]()
     {
       PluginManager::CreateUnique<TestAPI>(modulePath)->SayHi();
-    });
+    }
+  );
   Execute([modulePath]()
     {
       PluginManager::CreateUnique<TestAPI>(modulePath, "CreatePluginInstance2")->SayHi();
-    });
+    }
+  );
   Execute([modulePath]()
     {
       PluginManager::CreateUnique<TestAPI>(modulePath, "CreatePluginInstance2", "DestroyPluginInstance2")->SayHi();
-    });
+    }
+  );
   Execute([modulePath]()
     {
       PluginManager::CreateUnique<TestAPI>(modulePath, "InvalidFunction")->SayHi();
-    });
+    }
+  );
   Execute([modulePath]()
     {
       PluginManager::CreateUnique<TestAPI>(modulePath, "CreatePluginInstance", "InvalidFunction")->SayHi();
-    });
+    }
+  );
   return 0;
 }

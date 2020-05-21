@@ -28,7 +28,7 @@
 
 #if defined(_MSC_VER)
 #  pragma warning(push)
-#  pragma warning(disable:26444)
+#  pragma warning(disable: 6319 26444)
 #endif
 
 TEST_CASE("Executor tests - Sanity check", "[Executor]")
@@ -378,7 +378,8 @@ TEST_CASE("Executor tests - Task prioritization", "[Executor]")
       executor.Invoke(task2, 2);
       executor.Invoke(task3, 3);
       ::SleepFor(std::chrono::milliseconds(100));
-    });
+    }
+  );
   ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(3 == executor.TaskCount());
   ::SleepFor(std::chrono::milliseconds(200));

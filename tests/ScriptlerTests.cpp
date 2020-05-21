@@ -29,6 +29,11 @@
 
 #include "Tools.hpp"
 
+#if defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable: 6319)
+#endif
+
 TEST_CASE("Scriptler tests - Sanity check", "[Scriptler]")
 {
   flib::Scriptler scriptler;
@@ -116,12 +121,14 @@ TEST_CASE("Scriptler tests - Auto start-stop cycle", "[Scriptler]")
   scriptler.SetDefault([](const flib::Scriptler::Tokens&)
     {
       ::SleepFor(std::chrono::milliseconds(100));
-    });
+    }
+  );
   REQUIRE(!scriptler.IsActive());
   auto task = std::async(std::launch::async, [&scriptler, &stream]()
     {
       scriptler.Start(stream);
-    });
+    }
+  );
   ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(scriptler.IsActive());
   task.get();
@@ -139,12 +146,14 @@ TEST_CASE("Scriptler tests - Manual start-stop cycle", "[Scriptler]")
       ++reference;
       ::SleepFor(std::chrono::milliseconds(100));
       scriptler.Stop();
-    });
+    }
+  );
   REQUIRE(!scriptler.IsActive());
   auto task = std::async(std::launch::async, [&scriptler, &stream]()
     {
       scriptler.Start(stream);
-    });
+    }
+  );
   ::SleepFor(std::chrono::milliseconds(50));
   REQUIRE(scriptler.IsActive());
   task.get();
@@ -160,11 +169,13 @@ TEST_CASE("Scriptler tests - Simple scripting", "[Scriptler]")
   scriptler.Set("cmd1", [&reference, &scriptler](const flib::Scriptler::Tokens& tokens)
     {
       reference += flib::Scriptler::Tokens{ "cmd1","1" } == tokens ? 1 : 2;
-    });
+    }
+  );
   scriptler.SetDefault([&reference, &scriptler](const flib::Scriptler::Tokens& tokens)
     {
       reference += flib::Scriptler::Tokens{ "cmd2","2" } == tokens ? 3 : 5;
-    });
+    }
+  );
   REQUIRE(!scriptler.IsActive());
   stream << "cmd1 1\ncmd2 2";
   scriptler.Start(stream);
@@ -192,11 +203,13 @@ TEST_CASE("Scriptler tests - Complex scripting", "[Scriptler]")
   scriptler.Set("cmd1", [&reference, &scriptler](const flib::Scriptler::Tokens& tokens)
     {
       reference += flib::Scriptler::Tokens{ "cmd1","1","2" } == tokens ? 1 : 2;
-    });
+    }
+  );
   scriptler.SetDefault([&reference, &scriptler](const flib::Scriptler::Tokens&)
     {
       reference = reference * 2u;
-    });
+    }
+  );
   REQUIRE(!scriptler.IsActive());
   stream << "cmd1 1 2\ncmd2 3 4\ncmd3 5 6";
   scriptler.Start(stream);
@@ -206,7 +219,8 @@ TEST_CASE("Scriptler tests - Complex scripting", "[Scriptler]")
   scriptler.Set("cmd2", [&reference, &scriptler](const flib::Scriptler::Tokens& tokens)
     {
       reference += flib::Scriptler::Tokens{ "cmd2","3","4" } == tokens ? 3 : 5;
-    });
+    }
+  );
   stream.clear();
   stream << "cmd1 1 2\ncmd2 3 4\ncmd3 5 6";
   scriptler.Start(stream);
@@ -233,7 +247,8 @@ TEST_CASE("Scriptler tests - Scripting with special token pattern and deliminato
       {
         ++reference;
       }
-    });
+    }
+  );
   REQUIRE(!scriptler.IsActive());
   stream << "cmd1,1,2;cmd2,3,4;cmd3,5,6;";
   scriptler.Start(stream, "[^,]+", ';');
@@ -249,21 +264,29 @@ TEST_CASE("Scriptler tests - Script command setting", "[Scriptler]")
   scriptler.SetDefault([&reference, &scriptler](const flib::Scriptler::Tokens&)
     {
       reference = reference * 2u;
-    });
+    }
+  );
   scriptler.Set("add", [&reference, &scriptler](const flib::Scriptler::Tokens&)
     {
       scriptler.Set("cmd", [&reference, &scriptler](const flib::Scriptler::Tokens&)
         {
           ++reference;
-        });
-    });
+        }
+      );
+    }
+  );
   scriptler.Set("rm", [&reference, &scriptler](const flib::Scriptler::Tokens&)
     {
       scriptler.Set("cmd");
-    });
+    }
+  );
   REQUIRE(!scriptler.IsActive());
   stream << "cmd\nadd\ncmd\nrm\ncmd";
   scriptler.Start(stream);
   REQUIRE(!scriptler.IsActive());
   REQUIRE(6 == reference);
 }
+
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#endif

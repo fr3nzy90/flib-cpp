@@ -27,6 +27,7 @@
 #include <mutex>
 #include <stdexcept>
 #include <thread>
+#include <tuple>
 
 namespace flib
 {
@@ -70,13 +71,12 @@ namespace flib
     const std::chrono::milliseconds mDestructionTimeout;
     std::atomic<State> mState;
     std::condition_variable mWaitCondition;
-    struct
-    {
-      Event event;
-      Duration delay;
-      Duration period;
-      Type type;
-    } mConfiguration;
+    std::tuple<
+      Event    /*event*/,
+      Duration /*delay*/,
+      Duration /*period*/,
+      Type     /*type*/
+    > mConfiguration;
     mutable std::recursive_mutex mConfigurationAccessLock;
     std::future<void> mWorker;
   };
@@ -115,7 +115,7 @@ bool flib::Scheduler::IsScheduled(void) const
 void flib::Scheduler::Reschedule(void)
 {
   std::unique_lock<decltype(mConfigurationAccessLock)> configurationGuard(mConfigurationAccessLock);
-  if (!mConfiguration.event)
+  if (!std::get<0>(mConfiguration))
   {
     throw std::runtime_error("Invalid event");
   }
@@ -140,26 +140,29 @@ void flib::Scheduler::Schedule(const Event& event, const Duration& delay, const 
 
 void flib::Scheduler::AsyncProcess(void)
 {
+  Event event;
+  Duration delay, period;
+  Type type;
   std::mutex waitLock;
   std::unique_lock<decltype(waitLock)> waitGuard(waitLock);
   std::unique_lock<decltype(mConfigurationAccessLock)> configurationGuard(mConfigurationAccessLock, std::defer_lock);
-  decltype(mConfiguration) configuration;
   Clock::time_point eventTime;
   while (State::Destruct != mState)
   {
     mWaitCondition.wait(waitGuard, [this]()
       {
         return State::Destruct == mState || State::Activating == mState;
-      });
+      }
+    );
     if (State::Activating != mState)
     {
       continue;
     }
     mState = State::Active;
     configurationGuard.lock();
-    configuration = mConfiguration;
+    std::tie(event, delay, period, type) = mConfiguration;
     configurationGuard.unlock();
-    eventTime = Clock::now() + configuration.delay;
+    eventTime = Clock::now() + delay;
     mWaitCondition.wait_until(waitGuard, eventTime, [this, &eventTime]()
       {
         return eventTime <= Clock::now() || State::Active != mState;
@@ -167,22 +170,22 @@ void flib::Scheduler::AsyncProcess(void)
     );
     if (State::Active == mState)
     {
-      if (Duration(0) == configuration.period)
+      if (Duration(0) == period)
       {
         mState = State::Idle;
       }
-      configuration.event();
+      event();
       std::this_thread::yield();
     }
     while (State::Active == mState)
     {
-      if (Type::FixedDelay == configuration.type)
+      if (Type::FixedDelay == type)
       {
-        eventTime = Clock::now() + configuration.period;
+        eventTime = Clock::now() + period;
       }
       else
       {
-        eventTime += configuration.period;
+        eventTime += period;
       }
       mWaitCondition.wait_until(waitGuard, eventTime, [this, &eventTime]()
         {
@@ -191,7 +194,7 @@ void flib::Scheduler::AsyncProcess(void)
       );
       if (State::Active == mState)
       {
-        configuration.event();
+        event();
         std::this_thread::yield();
       }
     }

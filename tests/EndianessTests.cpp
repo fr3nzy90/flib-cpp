@@ -23,6 +23,11 @@
 
 #include "flib/Endianess.hpp"
 
+#if defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable: 6237 6319)
+#endif
+
 namespace
 {
   template<class Type>
@@ -79,3 +84,7 @@ TEST_CASE("Endianess tests - Multi byte swap", "[Endianess]")
   flib::ByteSwap(reversedValue, 8);
   REQUIRE(ReverseCompare(&originalValue, &reversedValue, 8));
 }
+
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#endif

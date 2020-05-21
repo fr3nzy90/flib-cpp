@@ -30,6 +30,11 @@
 
 #include "Tools.hpp"
 
+#if defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable: 6237 6319)
+#endif
+
 TEST_CASE("WaitQueue tests - Sanity check", "[WaitQueue]")
 {
   flib::WaitQueue<int> queue;
@@ -248,3 +253,7 @@ TEST_CASE("WaitQueue tests - Complex elements", "[WaitQueue]")
   queue.Disable();
   REQUIRE_THROWS_MATCHES(queue.WaitedPop(), std::runtime_error, Catch::Matchers::Message("WaitQueue is disabled"));
 }
+
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#endif

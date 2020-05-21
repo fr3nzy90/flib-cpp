@@ -26,6 +26,11 @@
 
 #include "Tools.hpp"
 
+#if defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable: 6319)
+#endif
+
 TEST_CASE("Scheduler tests - Sanity check", "[Scheduler]")
 {
   flib::Scheduler scheduler;
@@ -316,3 +321,7 @@ TEST_CASE("Scheduler tests - Scheduler rescheduling", "[Scheduler]")
   ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(6 == reference);
 }
+
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#endif

@@ -27,6 +27,11 @@
 
 #include "Tools.hpp"
 
+#if defined(_MSC_VER)
+#  pragma warning(push)
+#  pragma warning(disable: 6237 6319)
+#endif
+
 TEST_CASE("SyncLock tests - Sanity check", "[SyncLock]")
 {
   flib::SyncLock syncLock;
@@ -247,3 +252,7 @@ TEST_CASE("SyncLock tests - Lock timeout", "[SyncLock]")
   REQUIRE(0 == syncLock.LockCount());
   REQUIRE(1 == reference);
 }
+
+#if defined(_MSC_VER)
+#  pragma warning(pop)
+#endif

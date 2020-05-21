@@ -25,12 +25,12 @@
 
 #if defined(_MSC_VER)
 #  pragma warning(push)
-#  pragma warning(disable:26444)
+#  pragma warning(disable: 6319 26444)
 #endif
 
-TEST_CASE("Observable<void> tests - Sanity check", "[Observable]")
+TEST_CASE("Observable<> tests - Sanity check", "[Observable]")
 {
-  flib::Observable<void> observable;
+  flib::Observable<> observable;
   REQUIRE(0 == observable.SubscriptionCount());
   REQUIRE(observable.IsEmpty());
   REQUIRE_THROWS_MATCHES(observable.Subscribe({}), std::invalid_argument,
@@ -46,18 +46,9 @@ TEST_CASE("Observable<bool> tests - Sanity check", "[Observable]")
     Catch::Matchers::Message("Invalid observer"));
 }
 
-TEST_CASE("Observable<bool, int> tests - Sanity check", "[Observable]")
+TEST_CASE("Observable<> tests - Simple subscription cycle", "[Observable]")
 {
-  flib::Observable<bool, int> observable;
-  REQUIRE(0 == observable.SubscriptionCount());
-  REQUIRE(observable.IsEmpty());
-  REQUIRE_THROWS_MATCHES(observable.Subscribe({}), std::invalid_argument,
-    Catch::Matchers::Message("Invalid observer"));
-}
-
-TEST_CASE("Observable<void> tests - Simple subscription cycle", "[Observable]")
-{
-  flib::Observable<void> observable;
+  flib::Observable<> observable;
   REQUIRE(0 == observable.SubscriptionCount());
   REQUIRE(observable.IsEmpty());
   auto observer = []() {};
@@ -87,25 +78,9 @@ TEST_CASE("Observable<bool> tests - Simple subscription cycle", "[Observable]")
   REQUIRE(observable.IsEmpty());
 }
 
-TEST_CASE("Observable<bool, int> tests - Simple subscription cycle", "[Observable]")
+TEST_CASE("Observable<> tests - Complex subscription cycle", "[Observable]")
 {
-  flib::Observable<bool, int> observable;
-  REQUIRE(0 == observable.SubscriptionCount());
-  REQUIRE(observable.IsEmpty());
-  auto observer = [](bool, int) {};
-  auto subscription = observable.Subscribe(observer);
-  REQUIRE(observable.IsSubscribed(subscription));
-  REQUIRE(1 == observable.SubscriptionCount());
-  REQUIRE(!observable.IsEmpty());
-  observable.Unsubscribe(subscription);
-  REQUIRE(!observable.IsSubscribed(subscription));
-  REQUIRE(0 == observable.SubscriptionCount());
-  REQUIRE(observable.IsEmpty());
-}
-
-TEST_CASE("Observable<void> tests - Complex subscription cycle", "[Observable]")
-{
-  flib::Observable<void> observable;
+  flib::Observable<> observable;
   REQUIRE(0 == observable.SubscriptionCount());
   REQUIRE(observable.IsEmpty());
   auto observer = []() {};
@@ -155,35 +130,9 @@ TEST_CASE("Observable<bool> tests - Complex subscription cycle", "[Observable]")
   REQUIRE(observable.IsEmpty());
 }
 
-TEST_CASE("Observable<bool, int> tests - Complex subscription cycle", "[Observable]")
+TEST_CASE("Observable<> tests - Simple notification cycle", "[Observable]")
 {
-  flib::Observable<bool, int> observable;
-  REQUIRE(0 == observable.SubscriptionCount());
-  REQUIRE(observable.IsEmpty());
-  auto observer = [](bool, int) {};
-  auto subscription = observable.Subscribe(observer);
-  REQUIRE(observable.IsSubscribed(subscription));
-  REQUIRE(1 == observable.SubscriptionCount());
-  REQUIRE(!observable.IsEmpty());
-  auto subscription1 = observable.Subscribe(observer);
-  REQUIRE(observable.IsSubscribed(subscription1));
-  REQUIRE(2 == observable.SubscriptionCount());
-  REQUIRE(!observable.IsEmpty());
-  auto subscription2 = observable.Subscribe(observer);
-  REQUIRE(observable.IsSubscribed(subscription2));
-  REQUIRE(3 == observable.SubscriptionCount());
-  REQUIRE(!observable.IsEmpty());
-  observable.Clear();
-  REQUIRE(!observable.IsSubscribed(subscription));
-  REQUIRE(!observable.IsSubscribed(subscription1));
-  REQUIRE(!observable.IsSubscribed(subscription2));
-  REQUIRE(0 == observable.SubscriptionCount());
-  REQUIRE(observable.IsEmpty());
-}
-
-TEST_CASE("Observable<void> tests - Simple notification cycle", "[Observable]")
-{
-  flib::Observable<void> observable;
+  flib::Observable<> observable;
   std::atomic<uint32_t> reference(0);
   auto observer = [&reference]()
   {
@@ -226,33 +175,9 @@ TEST_CASE("Observable<bool> tests - Simple notification cycle", "[Observable]")
   REQUIRE(1 == reference);
 }
 
-TEST_CASE("Observable<bool, int> tests - Simple notification cycle", "[Observable]")
+TEST_CASE("Observable<> tests - Complex notification cycle", "[Observable]")
 {
-  flib::Observable<bool, int> observable;
-  std::atomic<uint32_t> reference(0);
-  auto observer = [&reference](bool value1, int value2)
-  {
-    if (value1 && 2 == value2)
-    {
-      ++reference;
-    }
-  };
-  auto subscription = observable.Subscribe(observer);
-  REQUIRE(observable.IsSubscribed(subscription));
-  REQUIRE(1 == observable.SubscriptionCount());
-  REQUIRE(0 == reference);
-  observable.Publish(true, 2);
-  REQUIRE(1 == reference);
-  observable.Unsubscribe(subscription);
-  REQUIRE(!observable.IsSubscribed(subscription));
-  REQUIRE(0 == observable.SubscriptionCount());
-  observable.Publish(true, 2);
-  REQUIRE(1 == reference);
-}
-
-TEST_CASE("Observable<void> tests - Complex notification cycle", "[Observable]")
-{
-  flib::Observable<void> observable;
+  flib::Observable<> observable;
   std::atomic<uint32_t> reference(0);
   auto observer = [&reference]()
   {
@@ -306,37 +231,6 @@ TEST_CASE("Observable<bool> tests - Complex notification cycle", "[Observable]")
   REQUIRE(!observable.IsSubscribed(subscription2));
   REQUIRE(0 == observable.SubscriptionCount());
   observable.Publish(true);
-  REQUIRE(6 == reference);
-}
-
-TEST_CASE("Observable<bool, int> tests - Complex notification cycle", "[Observable]")
-{
-  flib::Observable<bool, int> observable;
-  std::atomic<uint32_t> reference(0);
-  auto observer = [&reference](bool value1, int value2)
-  {
-    if (value1 && 2 == value2)
-    {
-      ++reference;
-    }
-  };
-  auto subscription = observable.Subscribe(observer);
-  REQUIRE(observable.IsSubscribed(subscription));
-  auto subscription1 = observable.Subscribe(observer);
-  REQUIRE(observable.IsSubscribed(subscription1));
-  auto subscription2 = observable.Subscribe(observer);
-  REQUIRE(observable.IsSubscribed(subscription2));
-  REQUIRE(3 == observable.SubscriptionCount());
-  REQUIRE(0 == reference);
-  observable.Publish(true, 2);
-  observable.Publish(true, 2);
-  REQUIRE(6 == reference);
-  observable.Clear();
-  REQUIRE(!observable.IsSubscribed(subscription));
-  REQUIRE(!observable.IsSubscribed(subscription1));
-  REQUIRE(!observable.IsSubscribed(subscription2));
-  REQUIRE(0 == observable.SubscriptionCount());
-  observable.Publish(true, 2);
   REQUIRE(6 == reference);
 }
 
