@@ -51,7 +51,7 @@ namespace flib
 
   private:
     std::set<std::shared_ptr<Observer>> mSubscriptions;
-    mutable std::recursive_mutex mSubscriptionsAccessLock;
+    mutable std::mutex mSubscriptionsAccessLock;
   };
 }
 
@@ -81,8 +81,10 @@ bool flib::Observable<T...>::IsSubscribed(const Subscription& subscription) cons
 template<class... T>
 void flib::Observable<T...>::Publish(const T& ...args) const
 {
-  std::lock_guard<decltype(mSubscriptionsAccessLock)> subscriptionsAccessGuard(mSubscriptionsAccessLock);
-  for (const auto& subscription : mSubscriptions)
+  std::unique_lock<decltype(mSubscriptionsAccessLock)> subscriptionsAccessGuard(mSubscriptionsAccessLock);
+  auto subscriptions = mSubscriptions;
+  subscriptionsAccessGuard.unlock();
+  for (const auto& subscription : subscriptions)
   {
     (*subscription)(std::forward<const T&>(args)...);
   }
