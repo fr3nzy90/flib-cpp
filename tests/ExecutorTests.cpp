@@ -390,11 +390,7 @@ TEST_CASE("Executor tests - Task prioritization", "[Executor]")
 TEST_CASE("Executor tests - Reconfiguring workers", "[Executor]")
 {
   flib::Executor executor;
-  REQUIRE_THROWS_MATCHES(executor.SetWorkerCount(3), std::runtime_error,
-    Catch::Matchers::Message("Executor not idle"));
-  executor.Disable();
   executor.SetWorkerCount(3);
-  executor.Enable();
   std::atomic<uint32_t> reference(0);
   auto task = [&reference]()
   {

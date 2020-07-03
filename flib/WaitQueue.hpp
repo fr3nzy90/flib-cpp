@@ -57,7 +57,7 @@ namespace flib
     inline T WaitedPop(const Duration& timeout = Duration(0));
 
   private:
-    std::atomic_bool mEnabled;
+    std::atomic<bool> mEnabled;
     std::condition_variable mWaitCondition;
     mutable std::recursive_mutex mObjectsAccessLock;
     std::list<std::tuple<T, Priority>> mObjects;

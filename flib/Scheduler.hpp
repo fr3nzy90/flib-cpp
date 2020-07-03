@@ -95,10 +95,13 @@ flib::Scheduler::Scheduler(void)
 flib::Scheduler::~Scheduler(void) noexcept
 {
   mState = State::Destruct;
-  do
+  if (mWorker.valid())
   {
-    mWaitCondition.notify_all();
-  } while (std::future_status::timeout == mWorker.wait_for(mDestructionTimeout));
+    do
+    {
+      mWaitCondition.notify_all();
+    } while (std::future_status::timeout == mWorker.wait_for(mDestructionTimeout));
+  }
 }
 
 void flib::Scheduler::Cancel(void)

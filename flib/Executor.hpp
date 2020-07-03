@@ -62,17 +62,11 @@ namespace flib
     inline std::size_t WorkerCount(void) const;
 
   private:
+    inline void UpdateState(const bool enabled);
     inline void AsyncProcess(void);
 
-    enum class State
-    {
-      Active,
-      Idle,
-      Destruct
-    };
-
     const std::chrono::milliseconds mDestructionTimeout;
-    std::atomic<State> mState;
+    std::atomic<bool> mEnabled;
     std::condition_variable mWaitCondition;
     std::list<std::shared_ptr<std::tuple<Task, Priority>>> mTasks;
     mutable std::recursive_mutex mTasksAccessLock;
@@ -85,25 +79,14 @@ namespace flib
 
 flib::Executor::Executor(const bool enabled, const std::size_t workerCount)
   : mDestructionTimeout(std::chrono::milliseconds(50)),
-  mState(enabled ? State::Active : State::Idle),
   mWorkers(workerCount)
 {
-  for (auto& worker : mWorkers)
-  {
-    worker = std::async(std::launch::async, &Executor::AsyncProcess, this);
-  }
+  UpdateState(enabled);
 }
 
 flib::Executor::~Executor(void) noexcept
 {
-  mState = State::Destruct;
-  for (auto& worker : mWorkers)
-  {
-    do
-    {
-      mWaitCondition.notify_all();
-    } while (std::future_status::timeout == worker.wait_for(mDestructionTimeout));
-  }
+  UpdateState(false);
 }
 
 void flib::Executor::Cancel(const Token& token)
@@ -121,14 +104,13 @@ void flib::Executor::Clear(void)
 void flib::Executor::Disable(void)
 {
   std::lock_guard<decltype(mWorkersAccessLock)> workersAccessGuard(mWorkersAccessLock);
-  mState = State::Idle;
+  UpdateState(false);
 }
 
 void flib::Executor::Enable(void)
 {
   std::lock_guard<decltype(mWorkersAccessLock)> workersAccessGuard(mWorkersAccessLock);
-  mState = State::Active;
-  mWaitCondition.notify_all();
+  UpdateState(true);
 }
 
 flib::Executor::Token flib::Executor::Invoke(const Task& task, const Priority priority)
@@ -171,29 +153,21 @@ bool flib::Executor::IsEmpty(void) const
 
 bool flib::Executor::IsEnabled(void) const
 {
-  return State::Active == mState;
+  return mEnabled;
 }
 
 void flib::Executor::SetWorkerCount(const std::size_t workerCount)
 {
   std::lock_guard<decltype(mWorkersAccessLock)> workersAccessGuard(mWorkersAccessLock);
-  if (State::Idle != mState)
+  auto enabled = mEnabled.load();
+  if (enabled)
   {
-    throw std::runtime_error("Executor not idle");
-  }
-  mState = State::Destruct;
-  for (auto& worker : mWorkers)
-  {
-    do
-    {
-      mWaitCondition.notify_all();
-    } while (std::future_status::timeout == worker.wait_for(mDestructionTimeout));
+    UpdateState(false);
   }
   mWorkers.resize(workerCount);
-  mState = State::Idle;
-  for (auto& worker : mWorkers)
+  if (enabled)
   {
-    worker = std::async(std::launch::async, &Executor::AsyncProcess, this);
+    UpdateState(enabled);
   }
 }
 
@@ -209,21 +183,49 @@ std::size_t flib::Executor::WorkerCount(void) const
   return mWorkers.size();
 }
 
+void flib::Executor::UpdateState(const bool enabled)
+{
+  mEnabled = enabled;
+  if (enabled)
+  {
+    for (auto& worker : mWorkers)
+    {
+      if (!worker.valid() || std::future_status::ready == worker.wait_for(std::chrono::seconds(0)))
+      {
+        worker = std::async(std::launch::async, &Executor::AsyncProcess, this);
+      }
+    }
+  }
+  else
+  {
+    for (auto& worker : mWorkers)
+    {
+      if (worker.valid() && std::future_status::timeout == worker.wait_for(std::chrono::seconds(0)))
+      {
+        do
+        {
+          mWaitCondition.notify_all();
+        } while (std::future_status::timeout == worker.wait_for(mDestructionTimeout));
+      }
+    }
+  }
+}
+
 void flib::Executor::AsyncProcess(void)
 {
   Task task;
   std::mutex waitLock;
   std::unique_lock<decltype(waitLock)> waitGuard(waitLock);
   std::unique_lock<decltype(mTasksAccessLock)> tasksAccessGuard(mTasksAccessLock, std::defer_lock);
-  while (State::Destruct != mState)
+  while (mEnabled)
   {
     mWaitCondition.wait(waitGuard, [this]()
       {
-        return State::Destruct == mState || (State::Active == mState && !IsEmpty());
+        return !mEnabled || !IsEmpty();
       }
     );
     tasksAccessGuard.lock();
-    if (State::Active != mState || mTasks.empty())
+    if (!mEnabled || mTasks.empty())
     {
       tasksAccessGuard.unlock();
       continue;

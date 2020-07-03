@@ -58,13 +58,7 @@ namespace flib
     inline void Stop(void);
 
   private:
-    enum class State
-    {
-      Active,
-      Idle
-    };
-
-    std::atomic<State> mState;
+    std::atomic<bool> mActive;
     std::map<std::string, Command> mCommands;
     Command mDefaultCommand;
     mutable std::recursive_mutex mCommandsAccessLock;
@@ -74,7 +68,7 @@ namespace flib
 // IMPLEMENTATION
 
 flib::Scriptler::Scriptler(void)
-  : mState(State::Idle)
+  : mActive(false)
 {
 }
 
@@ -102,7 +96,7 @@ std::list<std::string> flib::Scriptler::CommandList(void) const
 
 bool flib::Scriptler::IsActive(void) const
 {
-  return State::Active == mState;
+  return mActive;
 }
 
 bool flib::Scriptler::IsDefaultSet(void) const
@@ -141,12 +135,12 @@ void flib::Scriptler::SetDefault(const Command& command)
 
 void flib::Scriptler::Start(Stream& scriptStream, const std::string& tokenPattern, const char commandDeliminator)
 {
-  mState = State::Active;
+  mActive = true;
   std::string commandLine;
   std::regex tokenRegex(tokenPattern);
   Tokens tokens;
   Command command;
-  while (State::Active == mState && !scriptStream.eof())
+  while (mActive && !scriptStream.eof())
   {
     std::getline(scriptStream, commandLine, commandDeliminator);
     if (!scriptStream)
@@ -177,10 +171,10 @@ void flib::Scriptler::Start(Stream& scriptStream, const std::string& tokenPatter
       std::this_thread::yield();
     }
   }
-  mState = State::Idle;
+  mActive = false;
 }
 
 void flib::Scriptler::Stop(void)
 {
-  mState = State::Idle;
+  mActive = false;
 }
