@@ -39,9 +39,15 @@ namespace flib
   class Executor
   {
   public:
+    using Clock = std::chrono::steady_clock;
     using Priority = uint8_t;
     using Task = std::function<void(void)>;
     using Token = std::weak_ptr<void>;
+    using WorkerDiagnostics = std::tuple<
+      bool              /*active*/,
+      Clock::time_point /*taskStart*/,
+      Clock::time_point /*taskEnd*/
+    >;
 
     explicit inline Executor(const bool enabled = true, const std::size_t workerCount = 1);
     inline Executor(const Executor&) = delete;
@@ -51,6 +57,7 @@ namespace flib
     inline Executor& operator=(Executor&&) = default;
     inline void Cancel(const Token& token);
     inline void Clear(void);
+    inline std::list<WorkerDiagnostics> Diagnostics(void) const;
     inline void Disable(void);
     inline void Enable(void);
     inline Token Invoke(const Task& task, const Priority priority = 0);
@@ -62,15 +69,22 @@ namespace flib
     inline std::size_t WorkerCount(void) const;
 
   private:
+    struct Worker
+    {
+      std::future<void> thread;
+      std::atomic<Clock::time_point> taskStart{ Clock::time_point() };
+      std::atomic<Clock::time_point> taskEnd{ Clock::time_point() };
+    };
+
     inline void UpdateState(const bool enabled);
-    inline void AsyncProcess(void);
+    inline void AsyncProcess(Worker* worker);
 
     const std::chrono::milliseconds mDestructionTimeout;
     std::atomic<bool> mEnabled;
     std::condition_variable mWaitCondition;
     std::list<std::shared_ptr<std::tuple<Task, Priority>>> mTasks;
     mutable std::recursive_mutex mTasksAccessLock;
-    std::list<std::future<void>> mWorkers;
+    std::list<Worker> mWorkers;
     mutable std::recursive_mutex mWorkersAccessLock;
   };
 }
@@ -99,6 +113,21 @@ void flib::Executor::Clear(void)
 {
   std::lock_guard<decltype(mTasksAccessLock)> tasksAccessGuard(mTasksAccessLock);
   mTasks.clear();
+}
+
+std::list<flib::Executor::WorkerDiagnostics> flib::Executor::Diagnostics(void) const
+{
+  std::lock_guard<decltype(mWorkersAccessLock)> workersAccessGuard(mWorkersAccessLock);
+  std::list<flib::Executor::WorkerDiagnostics> result;
+  for (auto& worker : mWorkers)
+  {
+    result.push_back({
+      worker.thread.valid() && std::future_status::ready != worker.thread.wait_for(std::chrono::seconds(0)),
+      worker.taskStart,
+      worker.taskEnd
+      });
+  }
+  return result;
 }
 
 void flib::Executor::Disable(void)
@@ -190,9 +219,9 @@ void flib::Executor::UpdateState(const bool enabled)
   {
     for (auto& worker : mWorkers)
     {
-      if (!worker.valid() || std::future_status::ready == worker.wait_for(std::chrono::seconds(0)))
+      if (!worker.thread.valid() || std::future_status::ready == worker.thread.wait_for(std::chrono::seconds(0)))
       {
-        worker = std::async(std::launch::async, &Executor::AsyncProcess, this);
+        worker.thread = std::async(std::launch::async, &Executor::AsyncProcess, this, &worker);
       }
     }
   }
@@ -200,18 +229,18 @@ void flib::Executor::UpdateState(const bool enabled)
   {
     for (auto& worker : mWorkers)
     {
-      if (worker.valid() && std::future_status::timeout == worker.wait_for(std::chrono::seconds(0)))
+      if (worker.thread.valid() && std::future_status::timeout == worker.thread.wait_for(std::chrono::seconds(0)))
       {
         do
         {
           mWaitCondition.notify_all();
-        } while (std::future_status::timeout == worker.wait_for(mDestructionTimeout));
+        } while (std::future_status::timeout == worker.thread.wait_for(mDestructionTimeout));
       }
     }
   }
 }
 
-void flib::Executor::AsyncProcess(void)
+void flib::Executor::AsyncProcess(Worker* worker)
 {
   Task task;
   std::mutex waitLock;
@@ -233,7 +262,9 @@ void flib::Executor::AsyncProcess(void)
     task = std::get<0>(*mTasks.front());
     mTasks.pop_front();
     tasksAccessGuard.unlock();
+    worker->taskStart = Clock::now();
     task();
+    worker->taskEnd = Clock::now();
     std::this_thread::yield();
   }
 }

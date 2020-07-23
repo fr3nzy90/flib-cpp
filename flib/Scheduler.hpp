@@ -34,8 +34,14 @@ namespace flib
   class Scheduler
   {
   public:
+    using Clock = std::chrono::steady_clock;
     using Duration = std::chrono::milliseconds;
     using Event = std::function<void(void)>;
+    using WorkerDiagnostics = std::tuple<
+      bool              /*active*/,
+      Clock::time_point /*eventStart*/,
+      Clock::time_point /*eventEnd*/
+    >;
 
     enum class Type
     {
@@ -50,15 +56,21 @@ namespace flib
     inline Scheduler& operator=(const Scheduler&) = delete;
     inline Scheduler& operator=(Scheduler&&) = default;
     inline void Cancel(void);
+    inline WorkerDiagnostics Diagnostics(void) const;
     inline bool IsScheduled(void) const;
     inline void Reschedule(void);
     inline void Schedule(const Event& event, const Duration& delay, const Duration& period = Duration(0),
       const Type type = Type::FixedDelay);
 
   private:
-    inline void AsyncProcess(void);
+    struct Worker
+    {
+      std::future<void> thread;
+      std::atomic<Clock::time_point> eventStart{ Clock::time_point() };
+      std::atomic<Clock::time_point> eventEnd{ Clock::time_point() };
+    };
 
-    using Clock = std::chrono::steady_clock;
+    inline void AsyncProcess(Worker* worker);
 
     enum class State
     {
@@ -78,7 +90,7 @@ namespace flib
       Type     /*type*/
     > mConfiguration;
     mutable std::recursive_mutex mConfigurationAccessLock;
-    std::future<void> mWorker;
+    Worker mWorker;
   };
 }
 
@@ -87,20 +99,20 @@ namespace flib
 flib::Scheduler::Scheduler(void)
   : mDestructionTimeout(std::chrono::milliseconds(50)),
   mState(State::Idle),
-  mConfiguration{ {},Duration(0),Duration(0),Type::FixedDelay },
-  mWorker(std::async(std::launch::async, &Scheduler::AsyncProcess, this))
+  mConfiguration{ {},Duration(0),Duration(0),Type::FixedDelay }
 {
+  mWorker.thread = std::async(std::launch::async, &Scheduler::AsyncProcess, this, &mWorker);
 }
 
 flib::Scheduler::~Scheduler(void) noexcept
 {
   mState = State::Destruct;
-  if (mWorker.valid())
+  if (mWorker.thread.valid())
   {
     do
     {
       mWaitCondition.notify_all();
-    } while (std::future_status::timeout == mWorker.wait_for(mDestructionTimeout));
+    } while (std::future_status::timeout == mWorker.thread.wait_for(mDestructionTimeout));
   }
 }
 
@@ -108,6 +120,15 @@ void flib::Scheduler::Cancel(void)
 {
   mState = State::Idle;
   mWaitCondition.notify_all();
+}
+
+flib::Scheduler::WorkerDiagnostics flib::Scheduler::Diagnostics(void) const
+{
+  return {
+    mWorker.thread.valid() && std::future_status::ready != mWorker.thread.wait_for(std::chrono::seconds(0)),
+    mWorker.eventStart,
+    mWorker.eventEnd
+  };
 }
 
 bool flib::Scheduler::IsScheduled(void) const
@@ -141,7 +162,7 @@ void flib::Scheduler::Schedule(const Event& event, const Duration& delay, const 
   mWaitCondition.notify_all();
 }
 
-void flib::Scheduler::AsyncProcess(void)
+void flib::Scheduler::AsyncProcess(Worker* worker)
 {
   Event event;
   Duration delay, period;
@@ -177,7 +198,9 @@ void flib::Scheduler::AsyncProcess(void)
       {
         mState = State::Idle;
       }
+      worker->eventStart = Clock::now();
       event();
+      worker->eventEnd = Clock::now();
       std::this_thread::yield();
     }
     while (State::Active == mState)
@@ -197,7 +220,9 @@ void flib::Scheduler::AsyncProcess(void)
       );
       if (State::Active == mState)
       {
+        worker->eventStart = Clock::now();
         event();
+        worker->eventEnd = Clock::now();
         std::this_thread::yield();
       }
     }

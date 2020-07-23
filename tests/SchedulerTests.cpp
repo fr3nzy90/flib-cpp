@@ -28,12 +28,19 @@
 
 #if defined(_MSC_VER)
 #  pragma warning(push)
-#  pragma warning(disable: 6319)
+#  pragma warning(disable: 6237 6319)
 #endif
 
 TEST_CASE("Scheduler tests - Sanity check", "[Scheduler]")
 {
   flib::Scheduler scheduler;
+  bool active;
+  flib::Scheduler::Clock::time_point eventStart;
+  flib::Scheduler::Clock::time_point eventEnd;
+  std::tie(active, eventStart, eventEnd) = scheduler.Diagnostics();
+  REQUIRE(active);
+  REQUIRE(flib::Scheduler::Clock::time_point() == eventStart);
+  REQUIRE(flib::Scheduler::Clock::time_point() == eventEnd);
   auto event = []() {};
   REQUIRE(!scheduler.IsScheduled());
   REQUIRE_THROWS_MATCHES(scheduler.Schedule({}, flib::Scheduler::Duration(100)), std::invalid_argument,
@@ -320,6 +327,64 @@ TEST_CASE("Scheduler tests - Scheduler rescheduling", "[Scheduler]")
   REQUIRE(5 == reference);
   ::SleepFor(flib::Scheduler::Duration(100));
   REQUIRE(6 == reference);
+}
+
+TEST_CASE("Scheduler tests - Worker diagnostics", "[Scheduler]")
+{
+  flib::Scheduler scheduler;
+  std::atomic<uint32_t> reference(0);
+  bool active;
+  flib::Scheduler::Clock::time_point lastEventStart, lastEventEnd, eventStart, eventEnd;
+  std::tie(active, eventStart, eventEnd) = scheduler.Diagnostics();
+  REQUIRE(active);
+  REQUIRE(lastEventStart == eventStart);
+  REQUIRE(lastEventEnd == eventEnd);
+  auto event = [&reference]()
+  {
+    ++reference;
+    ::SleepFor(flib::Scheduler::Duration(100));
+  };
+  scheduler.Schedule(event, flib::Scheduler::Duration(0));
+  REQUIRE(scheduler.IsScheduled());
+  ::SleepFor(flib::Scheduler::Duration(50));
+  std::tie(active, eventStart, eventEnd) = scheduler.Diagnostics();
+  REQUIRE(active);
+  REQUIRE(lastEventStart != eventStart);
+  REQUIRE(lastEventEnd == eventEnd);
+  lastEventStart = eventStart;
+  ::SleepFor(flib::Scheduler::Duration(100));
+  REQUIRE(!scheduler.IsScheduled());
+  REQUIRE(1 == reference);
+  std::tie(active, eventStart, eventEnd) = scheduler.Diagnostics();
+  REQUIRE(active);
+  REQUIRE(lastEventStart == eventStart);
+  REQUIRE(lastEventEnd != eventEnd);
+  lastEventEnd = eventEnd;
+  REQUIRE(eventStart < eventEnd);
+  REQUIRE(flib::Scheduler::Duration(100) <= eventEnd - eventStart);
+  auto event2 = [&reference]()
+  {
+    ++reference;
+    ::SleepFor(flib::Scheduler::Duration(150));
+  };
+  scheduler.Schedule(event2, flib::Scheduler::Duration(0));
+  REQUIRE(scheduler.IsScheduled());
+  ::SleepFor(flib::Scheduler::Duration(50));
+  std::tie(active, eventStart, eventEnd) = scheduler.Diagnostics();
+  REQUIRE(active);
+  REQUIRE(lastEventStart != eventStart);
+  REQUIRE(lastEventEnd == eventEnd);
+  lastEventStart = eventStart;
+  ::SleepFor(flib::Scheduler::Duration(150));
+  REQUIRE(!scheduler.IsScheduled());
+  REQUIRE(2 == reference);
+  std::tie(active, eventStart, eventEnd) = scheduler.Diagnostics();
+  REQUIRE(active);
+  REQUIRE(lastEventStart == eventStart);
+  REQUIRE(lastEventEnd != eventEnd);
+  lastEventEnd = eventEnd;
+  REQUIRE(eventStart < eventEnd);
+  REQUIRE(flib::Scheduler::Duration(150) <= eventEnd - eventStart);
 }
 
 #if defined(_MSC_VER)

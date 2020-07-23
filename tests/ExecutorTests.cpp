@@ -28,12 +28,21 @@
 
 #if defined(_MSC_VER)
 #  pragma warning(push)
-#  pragma warning(disable: 6319 26444)
+#  pragma warning(disable: 6237 6319 26444)
 #endif
 
 TEST_CASE("Executor tests - Sanity check", "[Executor]")
 {
   flib::Executor executor;
+  bool active;
+  flib::Executor::Clock::time_point taskStart;
+  flib::Executor::Clock::time_point taskEnd;
+  auto diagnosticsList = executor.Diagnostics();
+  REQUIRE(1 == diagnosticsList.size());
+  std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
+  REQUIRE(active);
+  REQUIRE(flib::Executor::Clock::time_point() == taskStart);
+  REQUIRE(flib::Executor::Clock::time_point() == taskEnd);
   REQUIRE(1 == executor.WorkerCount());
   REQUIRE(executor.IsEmpty());
   REQUIRE(0 == executor.TaskCount());
@@ -45,6 +54,7 @@ TEST_CASE("Executor tests - Workerless executor", "[Executor]")
 {
   flib::Executor executor(true, 0);
   auto task = []() {};
+  REQUIRE(executor.Diagnostics().empty());
   REQUIRE(0 == executor.WorkerCount());
   REQUIRE(executor.IsEmpty());
   REQUIRE(0 == executor.TaskCount());
@@ -59,6 +69,18 @@ TEST_CASE("Executor tests - Workerless executor", "[Executor]")
 TEST_CASE("Executor tests - Multi worker executor", "[Executor]")
 {
   flib::Executor executor(true, 3);
+  bool active;
+  flib::Executor::Clock::time_point taskStart;
+  flib::Executor::Clock::time_point taskEnd;
+  auto diagnosticsList = executor.Diagnostics();
+  REQUIRE(3 == diagnosticsList.size());
+  for (const auto& diagnostics : diagnosticsList)
+  {
+    std::tie(active, taskStart, taskEnd) = diagnostics;
+    REQUIRE(active);
+    REQUIRE(flib::Executor::Clock::time_point() == taskStart);
+    REQUIRE(flib::Executor::Clock::time_point() == taskEnd);
+  }
   REQUIRE(3 == executor.WorkerCount());
   REQUIRE(executor.IsEmpty());
   REQUIRE(0 == executor.TaskCount());
@@ -70,6 +92,15 @@ TEST_CASE("Executor tests - Disabled executor", "[Executor]")
 {
   flib::Executor executor(false, 1);
   auto task = []() {};
+  bool active;
+  flib::Executor::Clock::time_point taskStart;
+  flib::Executor::Clock::time_point taskEnd;
+  auto diagnosticsList = executor.Diagnostics();
+  REQUIRE(1 == diagnosticsList.size());
+  std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
+  REQUIRE(!active);
+  REQUIRE(flib::Executor::Clock::time_point() == taskStart);
+  REQUIRE(flib::Executor::Clock::time_point() == taskEnd);
   REQUIRE(1 == executor.WorkerCount());
   REQUIRE(executor.IsEmpty());
   REQUIRE(0 == executor.TaskCount());
@@ -417,6 +448,216 @@ TEST_CASE("Executor tests - Reconfiguring workers", "[Executor]")
   ::SleepFor(std::chrono::milliseconds(700));
   REQUIRE(12 == reference);
   REQUIRE(0 == executor.TaskCount());
+}
+
+TEST_CASE("Executor tests - Single worker diagnostics", "[Scheduler]")
+{
+  flib::Executor executor(false, 1);
+  std::atomic<uint32_t> reference(0);
+  bool active;
+  flib::Executor::Clock::time_point lastTaskStart, lastTaskEnd, taskStart, taskEnd;
+  auto diagnosticsList = executor.Diagnostics();
+  REQUIRE(1 == diagnosticsList.size());
+  std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
+  REQUIRE(!active);
+  REQUIRE(lastTaskStart == taskStart);
+  REQUIRE(lastTaskEnd == taskEnd);
+  executor.Enable();
+  diagnosticsList = executor.Diagnostics();
+  REQUIRE(1 == diagnosticsList.size());
+  std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
+  REQUIRE(active);
+  REQUIRE(lastTaskStart == taskStart);
+  REQUIRE(lastTaskEnd == taskEnd);
+  auto task = [&reference]()
+  {
+    ++reference;
+    ::SleepFor(std::chrono::milliseconds(100));
+  };
+  executor.Invoke(task);
+  ::SleepFor(std::chrono::milliseconds(50));
+  REQUIRE(1 == reference);
+  REQUIRE(0 == executor.TaskCount());
+  diagnosticsList = executor.Diagnostics();
+  REQUIRE(1 == diagnosticsList.size());
+  std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
+  REQUIRE(active);
+  REQUIRE(lastTaskStart != taskStart);
+  REQUIRE(lastTaskEnd == taskEnd);
+  lastTaskStart = taskStart;
+  ::SleepFor(std::chrono::milliseconds(100));
+  diagnosticsList = executor.Diagnostics();
+  REQUIRE(1 == diagnosticsList.size());
+  std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
+  REQUIRE(active);
+  REQUIRE(lastTaskStart == taskStart);
+  REQUIRE(lastTaskEnd != taskEnd);
+  lastTaskEnd = taskEnd;
+  REQUIRE(taskStart < taskEnd);
+  REQUIRE(std::chrono::milliseconds(100) <= taskEnd - taskStart);
+  auto task2 = [&reference]()
+  {
+    ++reference;
+    ::SleepFor(std::chrono::milliseconds(150));
+  };
+  executor.Invoke(task2);
+  ::SleepFor(std::chrono::milliseconds(50));
+  REQUIRE(2 == reference);
+  REQUIRE(0 == executor.TaskCount());
+  diagnosticsList = executor.Diagnostics();
+  REQUIRE(1 == diagnosticsList.size());
+  std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
+  REQUIRE(active);
+  REQUIRE(lastTaskStart != taskStart);
+  REQUIRE(lastTaskEnd == taskEnd);
+  lastTaskStart = taskStart;
+  ::SleepFor(std::chrono::milliseconds(150));
+  diagnosticsList = executor.Diagnostics();
+  REQUIRE(1 == diagnosticsList.size());
+  std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
+  REQUIRE(active);
+  REQUIRE(lastTaskStart == taskStart);
+  REQUIRE(lastTaskEnd != taskEnd);
+  lastTaskEnd = taskEnd;
+  REQUIRE(taskStart < taskEnd);
+  REQUIRE(std::chrono::milliseconds(150) <= taskEnd - taskStart);
+  executor.Disable();
+  diagnosticsList = executor.Diagnostics();
+  REQUIRE(1 == diagnosticsList.size());
+  std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
+  REQUIRE(!active);
+  REQUIRE(lastTaskStart == taskStart);
+  REQUIRE(lastTaskEnd == taskEnd);
+}
+
+TEST_CASE("Executor tests - Multi worker diagnostics", "[Scheduler]")
+{
+  flib::Executor executor(false, 2);
+  std::atomic<uint32_t> reference(0);
+  bool active, active2;
+  flib::Executor::Clock::time_point lastTaskStart, lastTaskEnd, lastTaskStart2, lastTaskEnd2, taskStart, taskEnd,
+    taskStart2, taskEnd2;
+  auto diagnosticsList = executor.Diagnostics();
+  REQUIRE(2 == diagnosticsList.size());
+  std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
+  std::tie(active2, taskStart2, taskEnd2) = diagnosticsList.back();
+  REQUIRE(!active);
+  REQUIRE(lastTaskStart == taskStart);
+  REQUIRE(lastTaskEnd == taskEnd);
+  REQUIRE(!active2);
+  REQUIRE(lastTaskStart2 == taskStart2);
+  REQUIRE(lastTaskEnd2 == taskEnd2);
+  executor.Enable();
+  diagnosticsList = executor.Diagnostics();
+  REQUIRE(2 == diagnosticsList.size());
+  std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
+  std::tie(active2, taskStart2, taskEnd2) = diagnosticsList.back();
+  REQUIRE(active);
+  REQUIRE(lastTaskStart == taskStart);
+  REQUIRE(lastTaskEnd == taskEnd);
+  REQUIRE(active2);
+  REQUIRE(lastTaskStart2 == taskStart2);
+  REQUIRE(lastTaskEnd2 == taskEnd2);
+  auto task = [&reference]()
+  {
+    ++reference;
+    ::SleepFor(std::chrono::milliseconds(150));
+  };
+  executor.Invoke(task);
+  ::SleepFor(std::chrono::milliseconds(50));
+  REQUIRE(1 == reference);
+  REQUIRE(0 == executor.TaskCount());
+  diagnosticsList = executor.Diagnostics();
+  REQUIRE(2 == diagnosticsList.size());
+  std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
+  if (lastTaskStart != taskStart)
+  {
+    std::tie(active2, taskStart2, taskEnd2) = diagnosticsList.back();
+  }
+  else
+  {
+    std::tie(active, taskStart, taskEnd) = diagnosticsList.back();
+    std::tie(active2, taskStart2, taskEnd2) = diagnosticsList.front();
+  }
+  REQUIRE(active);
+  REQUIRE(lastTaskStart != taskStart);
+  REQUIRE(lastTaskEnd == taskEnd);
+  REQUIRE(active2);
+  REQUIRE(lastTaskStart2 == taskStart2);
+  REQUIRE(lastTaskEnd2 == taskEnd2);
+  lastTaskStart = taskStart;
+  auto task2 = [&reference]()
+  {
+    ++reference;
+    ::SleepFor(std::chrono::milliseconds(100));
+  };
+  executor.Invoke(task2);
+  ::SleepFor(std::chrono::milliseconds(50));
+  REQUIRE(2 == reference);
+  REQUIRE(0 == executor.TaskCount());
+  diagnosticsList = executor.Diagnostics();
+  REQUIRE(2 == diagnosticsList.size());
+  std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
+  if (lastTaskStart == taskStart)
+  {
+    std::tie(active2, taskStart2, taskEnd2) = diagnosticsList.back();
+  }
+  else
+  {
+    std::tie(active, taskStart, taskEnd) = diagnosticsList.back();
+    std::tie(active2, taskStart2, taskEnd2) = diagnosticsList.front();
+  }
+  REQUIRE(active);
+  REQUIRE(lastTaskStart == taskStart);
+  REQUIRE(lastTaskEnd == taskEnd);
+  REQUIRE(active2);
+  REQUIRE(lastTaskStart2 != taskStart2);
+  REQUIRE(lastTaskEnd2 == taskEnd2);
+  lastTaskStart2 = taskStart2;
+  ::SleepFor(std::chrono::milliseconds(100));
+  diagnosticsList = executor.Diagnostics();
+  REQUIRE(2 == diagnosticsList.size());
+  std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
+  if (lastTaskStart == taskStart)
+  {
+    std::tie(active2, taskStart2, taskEnd2) = diagnosticsList.back();
+  }
+  else
+  {
+    std::tie(active, taskStart, taskEnd) = diagnosticsList.back();
+    std::tie(active2, taskStart2, taskEnd2) = diagnosticsList.front();
+  }
+  REQUIRE(active);
+  REQUIRE(lastTaskStart == taskStart);
+  REQUIRE(lastTaskEnd != taskEnd);
+  REQUIRE(taskStart < taskEnd);
+  REQUIRE(std::chrono::milliseconds(150) <= taskEnd - taskStart);
+  REQUIRE(active2);
+  REQUIRE(lastTaskStart2 == taskStart2);
+  REQUIRE(lastTaskEnd2 != taskEnd2);
+  REQUIRE(taskStart2 < taskEnd2);
+  REQUIRE(std::chrono::milliseconds(100) <= taskEnd2 - taskStart2);
+  lastTaskEnd = taskEnd;
+  lastTaskEnd2 = taskEnd2;
+  executor.Disable();
+  diagnosticsList = executor.Diagnostics();
+  REQUIRE(2 == diagnosticsList.size());
+  std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
+  if (lastTaskStart == taskStart)
+  {
+    std::tie(active2, taskStart2, taskEnd2) = diagnosticsList.back();
+  }
+  else
+  {
+    std::tie(active, taskStart, taskEnd) = diagnosticsList.back();
+    std::tie(active2, taskStart2, taskEnd2) = diagnosticsList.front();
+  }
+  REQUIRE(!active);
+  REQUIRE(lastTaskStart == taskStart);
+  REQUIRE(lastTaskEnd == taskEnd);
+  REQUIRE(!active2);
+  REQUIRE(lastTaskStart2 == taskStart2);
+  REQUIRE(lastTaskEnd2 == taskEnd2);
 }
 
 #if defined(_MSC_VER)
