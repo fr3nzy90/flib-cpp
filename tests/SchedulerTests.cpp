@@ -349,7 +349,7 @@ TEST_CASE("Scheduler tests - Worker diagnostics", "[Scheduler]")
   ::SleepFor(flib::Scheduler::Duration(50));
   std::tie(active, eventStart, eventEnd) = scheduler.Diagnostics();
   REQUIRE(active);
-  REQUIRE(lastEventStart != eventStart);
+  REQUIRE(lastEventStart < eventStart);
   REQUIRE(lastEventEnd == eventEnd);
   lastEventStart = eventStart;
   ::SleepFor(flib::Scheduler::Duration(100));
@@ -358,7 +358,7 @@ TEST_CASE("Scheduler tests - Worker diagnostics", "[Scheduler]")
   std::tie(active, eventStart, eventEnd) = scheduler.Diagnostics();
   REQUIRE(active);
   REQUIRE(lastEventStart == eventStart);
-  REQUIRE(lastEventEnd != eventEnd);
+  REQUIRE(lastEventEnd < eventEnd);
   lastEventEnd = eventEnd;
   REQUIRE(eventStart < eventEnd);
   REQUIRE(flib::Scheduler::Duration(100) <= eventEnd - eventStart);
@@ -372,7 +372,7 @@ TEST_CASE("Scheduler tests - Worker diagnostics", "[Scheduler]")
   ::SleepFor(flib::Scheduler::Duration(50));
   std::tie(active, eventStart, eventEnd) = scheduler.Diagnostics();
   REQUIRE(active);
-  REQUIRE(lastEventStart != eventStart);
+  REQUIRE(lastEventStart < eventStart);
   REQUIRE(lastEventEnd == eventEnd);
   lastEventStart = eventStart;
   ::SleepFor(flib::Scheduler::Duration(150));
@@ -381,7 +381,7 @@ TEST_CASE("Scheduler tests - Worker diagnostics", "[Scheduler]")
   std::tie(active, eventStart, eventEnd) = scheduler.Diagnostics();
   REQUIRE(active);
   REQUIRE(lastEventStart == eventStart);
-  REQUIRE(lastEventEnd != eventEnd);
+  REQUIRE(lastEventEnd < eventEnd);
   lastEventEnd = eventEnd;
   REQUIRE(eventStart < eventEnd);
   REQUIRE(flib::Scheduler::Duration(150) <= eventEnd - eventStart);

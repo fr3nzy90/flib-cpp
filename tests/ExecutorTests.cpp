@@ -482,7 +482,7 @@ TEST_CASE("Executor tests - Single worker diagnostics", "[Scheduler]")
   REQUIRE(1 == diagnosticsList.size());
   std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
   REQUIRE(active);
-  REQUIRE(lastTaskStart != taskStart);
+  REQUIRE(lastTaskStart < taskStart);
   REQUIRE(lastTaskEnd == taskEnd);
   lastTaskStart = taskStart;
   ::SleepFor(std::chrono::milliseconds(100));
@@ -491,7 +491,7 @@ TEST_CASE("Executor tests - Single worker diagnostics", "[Scheduler]")
   std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
   REQUIRE(active);
   REQUIRE(lastTaskStart == taskStart);
-  REQUIRE(lastTaskEnd != taskEnd);
+  REQUIRE(lastTaskEnd < taskEnd);
   lastTaskEnd = taskEnd;
   REQUIRE(taskStart < taskEnd);
   REQUIRE(std::chrono::milliseconds(100) <= taskEnd - taskStart);
@@ -508,7 +508,7 @@ TEST_CASE("Executor tests - Single worker diagnostics", "[Scheduler]")
   REQUIRE(1 == diagnosticsList.size());
   std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
   REQUIRE(active);
-  REQUIRE(lastTaskStart != taskStart);
+  REQUIRE(lastTaskStart < taskStart);
   REQUIRE(lastTaskEnd == taskEnd);
   lastTaskStart = taskStart;
   ::SleepFor(std::chrono::milliseconds(150));
@@ -517,7 +517,7 @@ TEST_CASE("Executor tests - Single worker diagnostics", "[Scheduler]")
   std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
   REQUIRE(active);
   REQUIRE(lastTaskStart == taskStart);
-  REQUIRE(lastTaskEnd != taskEnd);
+  REQUIRE(lastTaskEnd < taskEnd);
   lastTaskEnd = taskEnd;
   REQUIRE(taskStart < taskEnd);
   REQUIRE(std::chrono::milliseconds(150) <= taskEnd - taskStart);
@@ -570,7 +570,7 @@ TEST_CASE("Executor tests - Multi worker diagnostics", "[Scheduler]")
   diagnosticsList = executor.Diagnostics();
   REQUIRE(2 == diagnosticsList.size());
   std::tie(active, taskStart, taskEnd) = diagnosticsList.front();
-  if (lastTaskStart != taskStart)
+  if (lastTaskStart < taskStart)
   {
     std::tie(active2, taskStart2, taskEnd2) = diagnosticsList.back();
   }
@@ -580,7 +580,7 @@ TEST_CASE("Executor tests - Multi worker diagnostics", "[Scheduler]")
     std::tie(active2, taskStart2, taskEnd2) = diagnosticsList.front();
   }
   REQUIRE(active);
-  REQUIRE(lastTaskStart != taskStart);
+  REQUIRE(lastTaskStart < taskStart);
   REQUIRE(lastTaskEnd == taskEnd);
   REQUIRE(active2);
   REQUIRE(lastTaskStart2 == taskStart2);
@@ -611,7 +611,7 @@ TEST_CASE("Executor tests - Multi worker diagnostics", "[Scheduler]")
   REQUIRE(lastTaskStart == taskStart);
   REQUIRE(lastTaskEnd == taskEnd);
   REQUIRE(active2);
-  REQUIRE(lastTaskStart2 != taskStart2);
+  REQUIRE(lastTaskStart2 < taskStart2);
   REQUIRE(lastTaskEnd2 == taskEnd2);
   lastTaskStart2 = taskStart2;
   ::SleepFor(std::chrono::milliseconds(100));
@@ -629,12 +629,12 @@ TEST_CASE("Executor tests - Multi worker diagnostics", "[Scheduler]")
   }
   REQUIRE(active);
   REQUIRE(lastTaskStart == taskStart);
-  REQUIRE(lastTaskEnd != taskEnd);
+  REQUIRE(lastTaskEnd < taskEnd);
   REQUIRE(taskStart < taskEnd);
   REQUIRE(std::chrono::milliseconds(150) <= taskEnd - taskStart);
   REQUIRE(active2);
   REQUIRE(lastTaskStart2 == taskStart2);
-  REQUIRE(lastTaskEnd2 != taskEnd2);
+  REQUIRE(lastTaskEnd2 < taskEnd2);
   REQUIRE(taskStart2 < taskEnd2);
   REQUIRE(std::chrono::milliseconds(100) <= taskEnd2 - taskStart2);
   lastTaskEnd = taskEnd;
