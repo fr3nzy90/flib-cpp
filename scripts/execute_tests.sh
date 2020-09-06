@@ -8,7 +8,10 @@ folders=(
 )
 for folder in "${folders[@]}"; do
   echo "Folder: $folder"
+  script_directory="`pwd`"
+  cd $folder
   for i in $(seq 1 $count); do 
-    "$folder/Tests"
+    "./tests"
   done
+  cd $script_directory
 done

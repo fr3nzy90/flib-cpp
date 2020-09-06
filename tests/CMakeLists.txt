@@ -15,8 +15,10 @@
 # COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-set(project_name "Tests")
-project(${project_name} VERSION 1.0.0 DESCRIPTION "fr3nzy's library tests")
+set(project_name "tests")
+project(${project_name} DESCRIPTION "fr3nzy's library tests")
+
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../test_plugin")
 
 source_group("/Header Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/[^/]*.hpp")
 source_group("/Source Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/[^/]*.cpp")
@@ -31,6 +33,8 @@ endif()
 
 add_executable(${project_name} ${src_files})
 
+add_dependencies(${project_name} test_plugin)
+
 if(UNIX)
-  target_link_libraries(${project_name} pthread)
+  target_link_libraries(${project_name} pthread dl)
 endif()

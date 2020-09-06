@@ -14,6 +14,6 @@ for %%i in (
    "../out/build/Windows-x64-Release"
 ) do (
    echo Folder: %%i
-   for /l %%x in (1, 1, %count%) do "%%~i/Tests.exe"
+   for /l %%x in (1, 1, %count%) do "%%~i/tests.exe"
 )
 endlocal

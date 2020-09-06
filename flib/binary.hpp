@@ -26,25 +26,25 @@
 namespace flib
 {
   // Structure for determination of platform byte endianess
-  struct Endianess
+  struct endianess
   {
   public:
     // Method for retrieving native platform byte endianess
     //
     // Returns:
     //   native reference byte endianess
-    inline static uint8_t Native(void);
+    inline static uint8_t native(void);
 
     enum : uint8_t
     {
       // Big byte - reference byte endianess
-      BigByte = 0x76u,
+      big_byte = 0x76u,
       // Big word - reference byte endianess
-      BigWord = 0x54u,
+      big_word = 0x54u,
       // Little word - reference byte endianess
-      LittleWord = 0x32u,
+      little_word = 0x32u,
       // Little byte - reference byte endianess
-      LittleByte = 0x10u
+      little_byte = 0x10u
     };
   };
 
@@ -52,36 +52,31 @@ namespace flib
   //
   // Parameters:
   //   data - 16-bit unsigned integer
-  inline void ByteSwap(uint16_t& data) noexcept;
+  inline void byte_swap(uint16_t& data) noexcept;
 
   // Method for reversing bytes of 32-bit unsigned integer
   //
   // Parameters:
   //   data - 32-bit unsigned integer
-  inline void ByteSwap(uint32_t& data) noexcept;
+  inline void byte_swap(uint32_t& data) noexcept;
 
   // Method for reversing bytes of 64-bit unsigned integer
   //
   // Parameters:
   //   data - 64-bit unsigned integer
-  inline void ByteSwap(uint64_t& data) noexcept;
+  inline void byte_swap(uint64_t& data) noexcept;
 
-  // Method for inplace reversing bytes of given byte array
-  //
-  // Notes:
-  //   - Method assumes that given length and offset are correct, because of this it does not check for memory bounds
-  //   - Length does not include offset
+  // Method for inplace reversing bytes of given contiguous memory block
   //
   // Parameters:
-  //     data - Pointer to byte array
-  //   length - Number of bytes to reverse, default is 0
-  //   offset - Number of bytes (from the beggining of the byte array) to skip before reversing, default is 0
-  inline void ByteSwap(uint8_t* data, const std::size_t length = 0, const std::size_t offset = 0) noexcept;
+  //   start - Pointer to the first byte of contiguous memory block
+  //     end - Pointer to byte after last byte of contiguous memory block
+  inline void byte_swap(uint8_t* start, uint8_t* end) noexcept;
 }
 
 // IMPLEMENTATION
 
-uint8_t flib::Endianess::Native(void)
+uint8_t flib::endianess::native(void)
 {
   static uint8_t result = 0;
   if (0 == result)
@@ -92,7 +87,7 @@ uint8_t flib::Endianess::Native(void)
   return result;
 }
 
-void flib::ByteSwap(uint16_t& data) noexcept
+void flib::byte_swap(uint16_t& data) noexcept
 {
 #if   defined(_MSC_VER)
   data = _byteswap_ushort(data);
@@ -103,7 +98,7 @@ void flib::ByteSwap(uint16_t& data) noexcept
 #endif
 }
 
-void flib::ByteSwap(uint32_t& data) noexcept
+void flib::byte_swap(uint32_t& data) noexcept
 {
 #if   defined(_MSC_VER)
   data = _byteswap_ulong(data);
@@ -115,7 +110,7 @@ void flib::ByteSwap(uint32_t& data) noexcept
 #endif
 }
 
-void flib::ByteSwap(uint64_t& data) noexcept
+void flib::byte_swap(uint64_t& data) noexcept
 {
 #if   defined(_MSC_VER)
   data = _byteswap_uint64(data);
@@ -128,18 +123,13 @@ void flib::ByteSwap(uint64_t& data) noexcept
 #endif
 }
 
-void flib::ByteSwap(uint8_t* data, const std::size_t length, const std::size_t offset) noexcept
+void flib::byte_swap(uint8_t* start, uint8_t* end) noexcept
 {
-  if (!data)
-  {
-    return;
-  }
-  data += offset;
   uint8_t temp;
-  for (std::size_t i = 0, m = length / 2; i < m; ++i)
+  for (--end; start < end; ++start, --end)
   {
-    temp = data[i];
-    data[i] = data[length - i - 1];
-    data[length - i - 1] = temp;
+    temp = *start;
+    *start = *end;
+    *end = temp;
   }
 }

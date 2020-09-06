@@ -63,13 +63,13 @@ else()
   message("***         CMAKE_EXE_LINKER_FLAGS set to: ${CMAKE_EXE_LINKER_FLAGS}")
 endif()
 
-find_package(catch REQUIRED HINTS "${CMAKE_SOURCE_DIR}/3rd-party/catch")
 find_package(FLib REQUIRED HINTS "${CMAKE_SOURCE_DIR}/flib")
+find_package(catch REQUIRED HINTS "${CMAKE_SOURCE_DIR}/3rd-party/catch")
+
+message("***                          flib version: ${FLib_FIND_VERSION}")
 
 include_directories("${FLib_INCLUDE_DIRS}"
                     "${Catch_INCLUDE_DIRS}")
                     
+add_subdirectory("${CMAKE_SOURCE_DIR}/test_plugin")
 add_subdirectory("${CMAKE_SOURCE_DIR}/tests")
-add_subdirectory("${CMAKE_SOURCE_DIR}/examples/pluginLib")
-add_subdirectory("${CMAKE_SOURCE_DIR}/examples/pluginApp")
-add_subdirectory("${CMAKE_SOURCE_DIR}/examples/waitQueueApp")

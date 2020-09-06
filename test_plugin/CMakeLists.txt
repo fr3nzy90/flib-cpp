@@ -15,8 +15,8 @@
 # COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
 # OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-set(project_name "WaitQueueApp")
-project(${project_name} VERSION 1.0.0 DESCRIPTION "fr3nzy's example wait queue application")
+set(project_name "test_plugin")
+project(${project_name} DESCRIPTION "fr3nzy's test plugin")
 
 source_group("/Header Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/[^/]*.hpp")
 source_group("/Source Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/[^/]*.cpp")
@@ -25,12 +25,6 @@ file(GLOB src_files
   "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
-if(UNIX)
-  add_definitions(-pthread)
-endif()
+add_library(${project_name} SHARED ${src_files})
 
-add_executable(${project_name} ${src_files})
-
-if(UNIX)
-  target_link_libraries(${project_name} pthread)
-endif()
+set_target_properties(${project_name} PROPERTIES PREFIX "")
