@@ -68,7 +68,7 @@ TEST_CASE("Sync_queue tests - Element adding and removing", "[sync_queue]")
   {
     flib::sync_queue<int> queue;
     std::atomic<uint32_t> reference(0);
-    auto task = std::async(std::launch::async, [&queue, &reference]()
+    auto task = std::async(std::launch::async, [&queue, &reference]
       {
         if (1 == queue.pop())
         {
@@ -139,7 +139,7 @@ TEST_CASE("Sync_queue tests - Timeouting", "[sync_queue]")
   REQUIRE(0 == queue.size());
   REQUIRE_THROWS_MATCHES(queue.pop(decltype(queue)::duration_t(50)), std::runtime_error,
     Catch::Message("Queue element retrieval has timed out"));
-  auto task = std::async(std::launch::async, [&queue]()
+  auto task = std::async(std::launch::async, [&queue]
     {
       testing::sleep_for(std::chrono::milliseconds(100));
       queue.push(1);

@@ -33,17 +33,24 @@ namespace flib
     using duration_t = std::chrono::milliseconds;
     using level_t = uint64_t;
 
+    enum class result_t
+    {
+      normal,
+      timeout
+    };
+
     inline sync_guard(void);
     inline sync_guard(const sync_guard&) = delete;
     inline sync_guard(sync_guard&&) = default;
     inline ~sync_guard(void) noexcept;
     inline sync_guard& operator=(const sync_guard&) = delete;
     inline sync_guard& operator=(sync_guard&&) = default;
-    inline bool lock(level_t level = 1, duration_t timeout = duration_t(0));
-    inline void reset(void);
+    inline level_t level(void) const;
+    inline result_t lock(level_t level = 1, duration_t timeout = duration_t(0));
+    inline sync_guard& reset(void);
     inline std::size_t size(void) const;
-    inline void unlock(void);
-    inline void unlock_all(void);
+    inline sync_guard& unlock(void);
+    inline sync_guard& unlock_all(void);
 
   private:
     std::atomic<level_t> m_level;
@@ -65,15 +72,20 @@ flib::sync_guard::~sync_guard(void) noexcept
   unlock_all();
 }
 
-bool flib::sync_guard::lock(level_t level, duration_t timeout)
+flib::sync_guard::level_t flib::sync_guard::level(void) const
 {
-  auto unlocked = [this, level]()
+  return m_level;
+}
+
+flib::sync_guard::result_t flib::sync_guard::lock(level_t level, duration_t timeout)
+{
+  auto unlocked = [this, level]
   {
     return level <= m_level;
   };
   std::mutex condition_mtx;
   std::unique_lock<decltype(condition_mtx)> condition_guard(condition_mtx);
-  auto result = true;
+  auto result = result_t::normal;
   ++m_locks;
   if (duration_t(0) == timeout)
   {
@@ -81,15 +93,16 @@ bool flib::sync_guard::lock(level_t level, duration_t timeout)
   }
   else
   {
-    result = m_condition.wait_for(condition_guard, timeout, unlocked);
+    result = m_condition.wait_for(condition_guard, timeout, unlocked) ? result_t::normal : result_t::timeout;
   }
   --m_locks;
   return result;
 }
 
-void flib::sync_guard::reset(void)
+flib::sync_guard& flib::sync_guard::reset(void)
 {
   m_level = 0x0000000000000000ull;
+  return *this;
 }
 
 std::size_t flib::sync_guard::size(void) const
@@ -97,14 +110,16 @@ std::size_t flib::sync_guard::size(void) const
   return m_locks;
 }
 
-void flib::sync_guard::unlock(void)
+flib::sync_guard& flib::sync_guard::unlock(void)
 {
   ++m_level;
   m_condition.notify_all();
+  return *this;
 }
 
-void flib::sync_guard::sync_guard::unlock_all(void)
+flib::sync_guard& flib::sync_guard::sync_guard::unlock_all(void)
 {
   m_level = 0xffffffffffffffffull;
   m_condition.notify_all();
+  return *this;
 }

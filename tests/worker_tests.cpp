@@ -66,95 +66,131 @@ TEST_CASE("Worker tests - Invocation", "[worker]")
   SECTION("Executorless worker")
   {
     flib::worker worker(true, 0);
-    auto task = []() {};
-    worker.invoke(task);
+    auto task = [] {};
+    auto invocation = worker.invoke(task);
     testing::sleep_for(std::chrono::milliseconds(50));
     REQUIRE(!worker.empty());
     REQUIRE(1 == worker.size());
+    REQUIRE(!invocation.expired());
+    REQUIRE(worker.invoked(invocation));
   }
   SECTION("Single executor worker")
   {
     flib::worker worker;
     std::atomic<uint32_t> reference(0);
-    auto task = [&reference]()
+    auto task1 = [&reference]
     {
       ++reference;
       testing::sleep_for(std::chrono::milliseconds(100));
     };
-    auto task2 = [&reference]()
+    auto task2 = [&reference]
     {
       ++reference;
     };
-    worker.invoke(task);
+    worker.invoke(task1);
     testing::sleep_for(std::chrono::milliseconds(50));
     REQUIRE(1 == reference);
     REQUIRE(0 == worker.size());
-    for (auto i = 0; i < 3; ++i)
-    {
-      worker.invoke(task2);
-    }
+    auto invocation1 = worker.invoke(task2);
+    auto invocation2 = worker.invoke(task2);
+    REQUIRE(!invocation1.expired());
+    REQUIRE(worker.invoked(invocation1));
+    REQUIRE(!invocation2.expired());
+    REQUIRE(worker.invoked(invocation2));
     testing::sleep_for(std::chrono::milliseconds(200));
-    REQUIRE(4 == reference);
+    REQUIRE(3 == reference);
     REQUIRE(0 == worker.size());
+    REQUIRE(invocation1.expired());
+    REQUIRE(!worker.invoked(invocation1));
+    REQUIRE(invocation2.expired());
+    REQUIRE(!worker.invoked(invocation2));
   }
   SECTION("Multi executor worker")
   {
     flib::worker worker(true, 3);
     std::atomic<uint32_t> reference(0);
-    auto task = [&reference]()
+    auto task1 = [&reference]
     {
       ++reference;
       testing::sleep_for(std::chrono::milliseconds(100));
     };
-    auto task2 = [&reference]()
+    auto task2 = [&reference]
     {
       ++reference;
       testing::sleep_for(std::chrono::milliseconds(200));
     };
     for (auto i = 0; i < 3; ++i)
     {
-      worker.invoke(task);
+      worker.invoke(task1);
     }
     testing::sleep_for(std::chrono::milliseconds(50));
     REQUIRE(3 == reference);
     REQUIRE(0 == worker.size());
-    for (auto i = 0; i < 9; ++i)
-    {
-      worker.invoke(task2);
-    }
-    REQUIRE(9 == worker.size());
-    testing::sleep_for(std::chrono::milliseconds(700));
-    REQUIRE(12 == reference);
+    auto invocation1 = worker.invoke(task2);
+    REQUIRE(!invocation1.expired());
+    REQUIRE(worker.invoked(invocation1));
+    auto invocation2 = worker.invoke(task2);
+    REQUIRE(!invocation2.expired());
+    REQUIRE(worker.invoked(invocation2));
+    auto invocation3 = worker.invoke(task2);
+    REQUIRE(!invocation3.expired());
+    REQUIRE(worker.invoked(invocation3));
+    auto invocation4 = worker.invoke(task2);
+    REQUIRE(!invocation4.expired());
+    REQUIRE(worker.invoked(invocation4));
+    auto invocation5 = worker.invoke(task2);
+    REQUIRE(!invocation5.expired());
+    REQUIRE(worker.invoked(invocation5));
+    auto invocation6 = worker.invoke(task2);
+    REQUIRE(!invocation6.expired());
+    REQUIRE(worker.invoked(invocation6));
+    REQUIRE(6 == worker.size());
+    testing::sleep_for(std::chrono::milliseconds(500));
+    REQUIRE(9 == reference);
     REQUIRE(0 == worker.size());
+    REQUIRE(invocation1.expired());
+    REQUIRE(!worker.invoked(invocation1));
+    REQUIRE(invocation2.expired());
+    REQUIRE(!worker.invoked(invocation2));
+    REQUIRE(invocation3.expired());
+    REQUIRE(!worker.invoked(invocation3));
+    REQUIRE(invocation4.expired());
+    REQUIRE(!worker.invoked(invocation4));
+    REQUIRE(invocation5.expired());
+    REQUIRE(!worker.invoked(invocation5));
+    REQUIRE(invocation6.expired());
+    REQUIRE(!worker.invoked(invocation6));
   }
   SECTION("Disabled worker")
   {
     flib::worker worker(false);
-    auto task = []() {};
-    worker.invoke(task);
+    auto task = [] {};
+    auto invocation = worker.invoke(task);
     testing::sleep_for(std::chrono::milliseconds(50));
     REQUIRE(!worker.empty());
     REQUIRE(1 == worker.size());
+    REQUIRE(!invocation.expired());
+    REQUIRE(worker.invoked(invocation));
   }
   SECTION("Self invocation")
   {
     flib::worker worker;
     std::atomic<uint32_t> reference(0);
-    auto task = [&reference]()
+    auto task1 = [&reference]
     {
       ++reference;
       testing::sleep_for(std::chrono::milliseconds(100));
     };
-    auto task3 = [&reference]()
+    auto task3 = [&reference]
     {
       ++reference;
     };
-    auto task2 = [&reference, &worker, &task3]()
+    auto task2 = [&reference, &worker, &task3]
     {
       ++reference;
       worker.invoke(task3);
     };
-    worker.invoke(task);
+    worker.invoke(task1);
     testing::sleep_for(std::chrono::milliseconds(50));
     REQUIRE(1 == reference);
     REQUIRE(0 == worker.size());
@@ -173,31 +209,55 @@ TEST_CASE("Worker tests - Cancellation", "[worker]")
 {
   flib::worker worker(false, 2);
   std::atomic<uint32_t> reference(0);
-  auto task = [&reference]()
+  auto task = [&reference]
   {
     ++reference;
     testing::sleep_for(std::chrono::milliseconds(100));
   };
-  auto token1 = worker.invoke(task);
-  auto token2 = worker.invoke(task);
+  auto invocation1 = worker.invoke(task);
+  REQUIRE(!invocation1.expired());
+  REQUIRE(worker.invoked(invocation1));
+  auto invocation2 = worker.invoke(task);
+  REQUIRE(!invocation2.expired());
+  REQUIRE(worker.invoked(invocation2));
   REQUIRE(2 == worker.size());
-  worker.cancel(token1);
-  worker.cancel(token2);
+  worker.cancel(invocation1);
+  REQUIRE(invocation1.expired());
+  REQUIRE(!worker.invoked(invocation1));
+  worker.cancel(invocation2);
+  REQUIRE(invocation2.expired());
+  REQUIRE(!worker.invoked(invocation2));
   REQUIRE(0 == worker.size());
   REQUIRE(0 == reference);
-  token1 = worker.invoke(task);
-  token2 = worker.invoke(task);
-  auto token3 = worker.invoke(task);
-  auto token4 = worker.invoke(task);
+  invocation1 = worker.invoke(task);
+  REQUIRE(!invocation1.expired());
+  REQUIRE(worker.invoked(invocation1));
+  invocation2 = worker.invoke(task);
+  REQUIRE(!invocation2.expired());
+  REQUIRE(worker.invoked(invocation2));
+  auto invocation3 = worker.invoke(task);
+  REQUIRE(!invocation3.expired());
+  REQUIRE(worker.invoked(invocation3));
+  auto invocation4 = worker.invoke(task);
+  REQUIRE(!invocation4.expired());
+  REQUIRE(worker.invoked(invocation4));
   REQUIRE(4 == worker.size());
   worker.enable();
   testing::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(2 == worker.size());
   REQUIRE(2 == reference);
-  worker.cancel(token1);
-  worker.cancel(token4);
+  REQUIRE(invocation1.expired());
+  REQUIRE(!worker.invoked(invocation1));
+  REQUIRE(invocation2.expired());
+  REQUIRE(!worker.invoked(invocation2));
+  worker.cancel(invocation1);
+  worker.cancel(invocation4);
+  REQUIRE(invocation4.expired());
+  REQUIRE(!worker.invoked(invocation4));
   REQUIRE(1 == worker.size());
   testing::sleep_for(std::chrono::milliseconds(100));
+  REQUIRE(invocation3.expired());
+  REQUIRE(!worker.invoked(invocation3));
   REQUIRE(0 == worker.size());
   REQUIRE(3 == reference);
 }
@@ -206,16 +266,16 @@ TEST_CASE("Worker tests - Clearing", "[worker]")
 {
   flib::worker worker;
   std::atomic<uint32_t> reference(0);
-  auto task = [&reference]()
+  auto task1 = [&reference]
   {
     ++reference;
     testing::sleep_for(std::chrono::milliseconds(100));
   };
-  auto task2 = [&reference]()
+  auto task2 = [&reference]
   {
     ++reference;
   };
-  worker.invoke(task);
+  worker.invoke(task1);
   testing::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(1 == reference);
   REQUIRE(0 == worker.size());
@@ -237,7 +297,7 @@ TEST_CASE("Worker tests - Disabling", "[worker]")
   {
     flib::worker worker;
     std::atomic<uint32_t> reference(0);
-    auto task = [&reference]()
+    auto task = [&reference]
     {
       ++reference;
     };
@@ -263,7 +323,7 @@ TEST_CASE("Worker tests - Disabling", "[worker]")
   {
     flib::worker worker(true, 3);
     std::atomic<uint32_t> reference(0);
-    auto task = [&reference]()
+    auto task = [&reference]
     {
       ++reference;
     };
@@ -295,33 +355,16 @@ TEST_CASE("Worker tests - Disabling", "[worker]")
   {
     flib::worker worker;
     std::atomic<uint32_t> reference(0);
-    auto task = [&reference]()
+    auto task = [&worker, &reference]
     {
       ++reference;
+      REQUIRE_THROWS_MATCHES(worker.disable(), std::runtime_error,
+        Catch::Message("Synchronous invocation of stop on internal thread"));
     };
-    auto disable_task = [&worker]()
-    {
-      worker.disable();
-    };
-    worker.invoke(disable_task);
-    testing::sleep_for(std::chrono::milliseconds(50));
-    REQUIRE(!worker.enabled());
     worker.invoke(task);
     testing::sleep_for(std::chrono::milliseconds(50));
-    REQUIRE(0 == reference);
-    REQUIRE(1 == worker.size());
-    worker.enable();
-    testing::sleep_for(std::chrono::milliseconds(50));
-    REQUIRE(1 == reference);
-    REQUIRE(0 == worker.size());
+    REQUIRE(1 == worker.executors());
     REQUIRE(worker.enabled());
-    worker.invoke(disable_task);
-    testing::sleep_for(std::chrono::milliseconds(50));
-    REQUIRE(!worker.enabled());
-    worker.invoke(task);
-    testing::sleep_for(std::chrono::milliseconds(50));
-    REQUIRE(1 == reference);
-    REQUIRE(1 == worker.size());
   }
 }
 
@@ -329,32 +372,40 @@ TEST_CASE("Worker tests - Prioritization", "[worker]")
 {
   flib::worker worker(false, 1);
   std::atomic<uint32_t> reference(1);
-  auto task = [&reference]()
+  auto task1 = [&reference]
   {
     ++reference;
     testing::sleep_for(std::chrono::milliseconds(50));
   };
-  auto task2 = [&reference]()
+  auto task2 = [&reference]
   {
     reference = reference * 2;
     testing::sleep_for(std::chrono::milliseconds(50));
   };
-  auto task3 = [&reference]()
+  auto task3 = [&reference]
   {
     reference += 3;
     testing::sleep_for(std::chrono::milliseconds(50));
   };
-  worker.invoke(task);
-  worker.invoke(task2, 1);
-  worker.invoke(task3, 1);
+  worker.invoke(task1);
+  auto invocation2 = worker.invoke(task2, 1);
+  REQUIRE(!invocation2.expired());
+  REQUIRE(worker.invoked(invocation2));
+  auto invocation3 = worker.invoke(task3, 1);
+  REQUIRE(!invocation3.expired());
+  REQUIRE(worker.invoked(invocation3));
   REQUIRE(3 == worker.size());
   worker.enable();
   testing::sleep_for(std::chrono::milliseconds(200));
+  REQUIRE(invocation2.expired());
+  REQUIRE(!worker.invoked(invocation2));
+  REQUIRE(invocation3.expired());
+  REQUIRE(!worker.invoked(invocation3));
   REQUIRE(0 == worker.size());
   REQUIRE(6 == reference);
-  worker.invoke([&worker, &task, &task2, &task3]()
+  worker.invoke([&worker, &task1, &task2, &task3]
     {
-      worker.invoke(task, 1);
+      worker.invoke(task1, 1);
       worker.invoke(task2, 2);
       worker.invoke(task3, 3);
       testing::sleep_for(std::chrono::milliseconds(100));
@@ -374,19 +425,19 @@ TEST_CASE("Worker tests - Reconfiguration", "[worker]")
     flib::worker worker;
     worker.executors(3);
     std::atomic<uint32_t> reference(0);
-    auto task = [&reference]()
+    auto task1 = [&reference]
     {
       ++reference;
       testing::sleep_for(std::chrono::milliseconds(100));
     };
-    auto task2 = [&reference]()
+    auto task2 = [&reference]
     {
       ++reference;
       testing::sleep_for(std::chrono::milliseconds(200));
     };
     for (auto i = 0; i < 3; ++i)
     {
-      worker.invoke(task);
+      worker.invoke(task1);
     }
     testing::sleep_for(std::chrono::milliseconds(50));
     REQUIRE(3 == reference);
@@ -404,7 +455,7 @@ TEST_CASE("Worker tests - Reconfiguration", "[worker]")
   {
     flib::worker worker;
     std::atomic<uint32_t> reference(0);
-    auto task = [&worker, &reference]()
+    auto task = [&worker, &reference]
     {
       ++reference;
       REQUIRE_THROWS_MATCHES(worker.executors(3), std::runtime_error,
@@ -412,12 +463,7 @@ TEST_CASE("Worker tests - Reconfiguration", "[worker]")
     };
     worker.invoke(task);
     testing::sleep_for(std::chrono::milliseconds(50));
-    REQUIRE(1 == reference);
-    {
-      auto diagnostics_list = worker.diagnostics();
-      REQUIRE(1 == diagnostics_list.size());
-      REQUIRE(diagnostics_list.front().active);
-    }
+    REQUIRE(1 == worker.executors());
     REQUIRE(worker.enabled());
   }
 }
@@ -453,12 +499,12 @@ TEST_CASE("Worker tests - Diagnostics", "[worker]")
     REQUIRE(last_diagnostics.task_start == diagnostics.task_start);
     REQUIRE(last_diagnostics.task_end == diagnostics.task_end);
     last_diagnostics = diagnostics;
-    auto task = [&reference]()
+    auto task1 = [&reference]
     {
       ++reference;
       testing::sleep_for(std::chrono::milliseconds(100));
     };
-    worker.invoke(task);
+    worker.invoke(task1);
     testing::sleep_for(std::chrono::milliseconds(50));
     REQUIRE(1 == reference);
     REQUIRE(0 == worker.size());
@@ -483,7 +529,7 @@ TEST_CASE("Worker tests - Diagnostics", "[worker]")
     REQUIRE(diagnostics.task_start < diagnostics.task_end);
     REQUIRE(std::chrono::milliseconds(100) <= diagnostics.task_end - diagnostics.task_start);
     last_diagnostics = diagnostics;
-    auto task2 = [&reference]()
+    auto task2 = [&reference]
     {
       ++reference;
       testing::sleep_for(std::chrono::milliseconds(150));
@@ -557,12 +603,12 @@ TEST_CASE("Worker tests - Diagnostics", "[worker]")
     REQUIRE(last_diagnostics2.task_end == diagnostics2.task_end);
     last_diagnostics1 = diagnostics1;
     last_diagnostics2 = diagnostics2;
-    auto task = [&reference]()
+    auto task1 = [&reference]
     {
       ++reference;
       testing::sleep_for(std::chrono::milliseconds(150));
     };
-    worker.invoke(task);
+    worker.invoke(task1);
     testing::sleep_for(std::chrono::milliseconds(50));
     REQUIRE(1 == reference);
     REQUIRE(0 == worker.size());
@@ -588,7 +634,7 @@ TEST_CASE("Worker tests - Diagnostics", "[worker]")
     REQUIRE(last_diagnostics2.task_end == diagnostics2.task_end);
     last_diagnostics1 = diagnostics1;
     last_diagnostics2 = diagnostics2;
-    auto task2 = [&reference]()
+    auto task2 = [&reference]
     {
       ++reference;
       testing::sleep_for(std::chrono::milliseconds(100));
@@ -667,127 +713,5 @@ TEST_CASE("Worker tests - Diagnostics", "[worker]")
     REQUIRE(!diagnostics2.active);
     REQUIRE(last_diagnostics2.task_start == diagnostics2.task_start);
     REQUIRE(last_diagnostics2.task_end == diagnostics2.task_end);
-  }
-}
-
-TEST_CASE("Worker tests - Exceptions", "[worker]")
-{
-  SECTION("Single executor worker")
-  {
-    flib::worker worker;
-    std::atomic<uint32_t> reference(0);
-    auto task = [&reference]()
-    {
-      ++reference;
-      throw std::runtime_error("Some exception");
-    };
-    auto exception_handler = [&reference](std::exception_ptr e)
-    {
-      auto test = [&reference, e]()
-      {
-        if (e)
-        {
-          ++reference;
-          std::rethrow_exception(e);
-        }
-      };
-      REQUIRE_THROWS_MATCHES(test(), std::runtime_error, Catch::Message("Some exception"));
-    };
-    worker.handle_exceptions(exception_handler);
-    worker.invoke(task);
-    testing::sleep_for(std::chrono::milliseconds(50));
-    REQUIRE(2 == reference);
-    {
-      auto diagnostics_list = worker.diagnostics();
-      REQUIRE(1 == diagnostics_list.size());
-      REQUIRE(!diagnostics_list.front().active);
-    }
-    REQUIRE(worker.enabled());
-    worker.enable();
-    {
-      auto diagnostics_list = worker.diagnostics();
-      REQUIRE(1 == diagnostics_list.size());
-      REQUIRE(diagnostics_list.front().active);
-    }
-    REQUIRE(worker.enabled());
-    worker.handle_exceptions();
-    worker.invoke(task);
-    testing::sleep_for(std::chrono::milliseconds(50));
-    REQUIRE(3 == reference);
-    {
-      auto diagnostics_list = worker.diagnostics();
-      REQUIRE(1 == diagnostics_list.size());
-      REQUIRE(!diagnostics_list.front().active);
-    }
-    REQUIRE(worker.enabled());
-  }
-  SECTION("Multi executor worker")
-  {
-    flib::worker worker(true, 2);
-    std::atomic<uint32_t> reference(0);
-    auto task = [&reference]()
-    {
-      ++reference;
-      throw std::runtime_error("Some exception");
-    };
-    auto exception_handler = [&reference](std::exception_ptr e)
-    {
-      auto test = [&reference, e]()
-      {
-        if (e)
-        {
-          ++reference;
-          std::rethrow_exception(e);
-        }
-      };
-      REQUIRE_THROWS_MATCHES(test(), std::runtime_error, Catch::Message("Some exception"));
-    };
-    worker.handle_exceptions(exception_handler);
-    worker.invoke(task);
-    testing::sleep_for(std::chrono::milliseconds(50));
-    REQUIRE(2 == reference);
-    {
-      auto diagnostics_list = worker.diagnostics();
-      REQUIRE(2 == diagnostics_list.size());
-      REQUIRE((!diagnostics_list.front().active && diagnostics_list.back().active ||
-        diagnostics_list.front().active && !diagnostics_list.back().active));
-    }
-    REQUIRE(worker.enabled());
-    worker.invoke(task);
-    testing::sleep_for(std::chrono::milliseconds(50));
-    REQUIRE(4 == reference);
-    {
-      auto diagnostics_list = worker.diagnostics();
-      REQUIRE(2 == diagnostics_list.size());
-      REQUIRE((!diagnostics_list.front().active && !diagnostics_list.back().active));
-    }
-    REQUIRE(worker.enabled());
-    worker.enable();
-    {
-      auto diagnostics_list = worker.diagnostics();
-      REQUIRE(2 == diagnostics_list.size());
-      REQUIRE((diagnostics_list.front().active && diagnostics_list.back().active));
-    }
-    REQUIRE(worker.enabled());
-    worker.handle_exceptions();
-    worker.invoke(task);
-    testing::sleep_for(std::chrono::milliseconds(50));
-    REQUIRE(5 == reference);
-    {
-      auto diagnostics_list = worker.diagnostics();
-      REQUIRE(2 == diagnostics_list.size());
-      REQUIRE((!diagnostics_list.front().active && diagnostics_list.back().active ||
-        diagnostics_list.front().active && !diagnostics_list.back().active));
-    }
-    REQUIRE(worker.enabled());
-    worker.invoke(task);
-    testing::sleep_for(std::chrono::milliseconds(50));
-    REQUIRE(6 == reference);
-    {
-      auto diagnostics_list = worker.diagnostics();
-      REQUIRE(2 == diagnostics_list.size());
-      REQUIRE((!diagnostics_list.front().active && !diagnostics_list.back().active));
-    }
-    REQUIRE(worker.enabled());
   }
 }

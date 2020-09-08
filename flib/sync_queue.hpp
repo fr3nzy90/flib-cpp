@@ -45,15 +45,15 @@ namespace flib
     inline ~sync_queue(void) noexcept;
     inline sync_queue& operator=(const sync_queue&) = delete;
     inline sync_queue& operator=(sync_queue&&) = default;
-    inline void clear(void);
-    inline void disable(void);
+    inline sync_queue& clear(void);
+    inline sync_queue& disable(void);
     inline bool empty(void) const;
-    inline void enable(void);
+    inline sync_queue& enable(void);
     inline bool enabled(void) const;
     inline element_t pop(duration_t timeout = duration_t(0));
     inline element_t pop_raw(void);
-    inline void push(const element_t& object, priority_t priority = 0);
-    inline void push(element_t&& object, priority_t priority = 0);
+    inline sync_queue& push(const element_t& object, priority_t priority = 0);
+    inline sync_queue& push(element_t&& object, priority_t priority = 0);
     inline std::size_t size(void) const;
 
   private:
@@ -66,7 +66,7 @@ namespace flib
     std::atomic<bool> m_enabled;
     std::condition_variable m_condition;
     std::list<extended_element_t> m_objects;
-    mutable std::recursive_mutex m_objects_mtx;
+    mutable std::mutex m_objects_mtx;
   };
 }
 
@@ -88,17 +88,19 @@ flib::sync_queue<T>::~sync_queue(void) noexcept
 }
 
 template<class T>
-void flib::sync_queue<T>::clear(void)
+flib::sync_queue<T>& flib::sync_queue<T>::clear(void)
 {
   std::lock_guard<decltype(m_objects_mtx)> objects_guard(m_objects_mtx);
   m_objects.clear();
+  return *this;
 }
 
 template<class T>
-void flib::sync_queue<T>::disable(void)
+flib::sync_queue<T>& flib::sync_queue<T>::disable(void)
 {
   m_enabled = false;
   m_condition.notify_all();
+  return *this;
 }
 
 template<class T>
@@ -109,9 +111,10 @@ bool flib::sync_queue<T>::empty(void) const
 }
 
 template<class T>
-void flib::sync_queue<T>::enable(void)
+flib::sync_queue<T>& flib::sync_queue<T>::enable(void)
 {
   m_enabled = true;
+  return *this;
 }
 
 template<class T>
@@ -124,7 +127,7 @@ template<class T>
 typename flib::sync_queue<T>::element_t flib::sync_queue<T>::pop(duration_t timeout)
 {
   auto timepoint = std::chrono::high_resolution_clock::now() + timeout;
-  auto condition_check = [this]()
+  auto condition_check = [this]
   {
     std::lock_guard<decltype(m_objects_mtx)> objects_guard(m_objects_mtx);
     return !m_objects.empty() || !m_enabled;
@@ -168,13 +171,13 @@ typename flib::sync_queue<T>::element_t flib::sync_queue<T>::pop_raw(void)
 }
 
 template<class T>
-void flib::sync_queue<T>::push(const element_t& object, priority_t priority)
+flib::sync_queue<T>& flib::sync_queue<T>::push(const element_t& object, priority_t priority)
 {
-  push(element_t(object), priority);
+  return push(element_t(object), priority);
 }
 
 template<class T>
-void flib::sync_queue<T>::push(element_t&& object, priority_t priority)
+flib::sync_queue<T>& flib::sync_queue<T>::push(element_t&& object, priority_t priority)
 {
   std::lock_guard<decltype(m_objects_mtx)> objects_guard(m_objects_mtx);
   m_objects.emplace(0 == priority ? m_objects.cend() : std::upper_bound(m_objects.cbegin(), m_objects.cend(), priority,
@@ -183,6 +186,7 @@ void flib::sync_queue<T>::push(element_t&& object, priority_t priority)
       return value > element.priority;
     }), extended_element_t{ std::move(object), priority });
   m_condition.notify_one();
+  return *this;
 }
 
 template<class T>

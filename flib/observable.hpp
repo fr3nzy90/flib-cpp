@@ -41,12 +41,14 @@ namespace flib
     inline ~observable(void) = default;
     inline observable& operator=(const observable&) = delete;
     inline observable& operator=(observable&&) = default;
-    inline void clear(void);
+    inline observable& clear(void);
     inline bool empty(void) const;
-    inline void publish(const T& ...args) const;
+    inline observable& publish(const T& ...args);
     inline std::size_t size(void) const;
     inline subscription_t subscribe(const observer_t& observer);
-    inline void unsubscribe(const subscription_t& subscription);
+    inline subscription_t subscribe(observer_t&& observer);
+    inline bool subscribed(const subscription_t& subscription) const;
+    inline observable& unsubscribe(const subscription_t& subscription);
 
   private:
     std::set<std::shared_ptr<observer_t>> m_subscriptions;
@@ -57,10 +59,11 @@ namespace flib
 // IMPLEMENTATION
 
 template<class... T>
-void flib::observable<T...>::clear(void)
+flib::observable<T...>& flib::observable<T...>::clear(void)
 {
   std::lock_guard<decltype(m_subscriptions_mtx)> subscriptions_guard(m_subscriptions_mtx);
   m_subscriptions.clear();
+  return *this;
 }
 
 template<class... T>
@@ -71,7 +74,7 @@ bool flib::observable<T...>::empty(void) const
 }
 
 template<class... T>
-void flib::observable<T...>::publish(const T& ...args) const
+flib::observable<T...>& flib::observable<T...>::publish(const T& ...args)
 {
   std::unique_lock<decltype(m_subscriptions_mtx)> subscriptions_guard(m_subscriptions_mtx);
   auto subscriptions = m_subscriptions;
@@ -80,6 +83,7 @@ void flib::observable<T...>::publish(const T& ...args) const
   {
     (*subscription)(std::forward<const T&>(args)...);
   }
+  return *this;
 }
 
 template<class... T>
@@ -92,17 +96,31 @@ std::size_t flib::observable<T...>::size(void) const
 template<class... T>
 typename flib::observable<T...>::subscription_t flib::observable<T...>::subscribe(const observer_t& observer)
 {
+  return subscribe(observer_t(observer));
+}
+
+template<class... T>
+typename flib::observable<T...>::subscription_t flib::observable<T...>::subscribe(observer_t&& observer)
+{
   if (!observer)
   {
     throw std::invalid_argument("Invalid observer");
   }
   std::lock_guard<decltype(m_subscriptions_mtx)> subscriptions_guard(m_subscriptions_mtx);
-  return *m_subscriptions.emplace(std::make_shared<observer_t>(observer)).first;
+  return *m_subscriptions.emplace(std::make_shared<observer_t>(std::move(observer))).first;
 }
 
 template<class... T>
-void flib::observable<T...>::unsubscribe(const subscription_t& subscription)
+bool flib::observable<T...>::subscribed(const subscription_t& subscription) const
+{
+  std::lock_guard<decltype(m_subscriptions_mtx)> subscriptions_guard(m_subscriptions_mtx);
+  return m_subscriptions.cend() != m_subscriptions.find(std::static_pointer_cast<observer_t>(subscription.lock()));
+}
+
+template<class... T>
+flib::observable<T...>& flib::observable<T...>::unsubscribe(const subscription_t& subscription)
 {
   std::lock_guard<decltype(m_subscriptions_mtx)> subscriptions_guard(m_subscriptions_mtx);
   m_subscriptions.erase(std::static_pointer_cast<observer_t>(subscription.lock()));
+  return *this;
 }

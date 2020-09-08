@@ -37,7 +37,6 @@ namespace flib
     using clock_t = std::chrono::steady_clock;
     using duration_t = std::chrono::milliseconds;
     using event_t = std::function<void(void)>;
-    using exception_handler_t = std::function<void(std::exception_ptr)>;
 
     struct diagnostics_t
     {
@@ -59,14 +58,12 @@ namespace flib
     inline ~timer(void) noexcept;
     inline timer& operator=(const timer&) = delete;
     inline timer& operator=(timer&&) = default;
-    inline void cancel(void);
+    inline timer& cancel(void);
     inline diagnostics_t diagnostics(void) const;
-    inline void handle_exceptions(exception_handler_t&& handler);
-    inline void handle_exceptions(const exception_handler_t& handler = {});
-    inline void reschedule(void);
-    inline void schedule(event_t&& event, duration_t&& delay, duration_t&& period = duration_t(0),
+    inline timer& reschedule(void);
+    inline timer& schedule(event_t&& event, duration_t&& delay, duration_t&& period = {},
       type_t type = type_t::fixed_delay);
-    inline void schedule(const event_t& event, const duration_t& delay, const duration_t& period = duration_t(0),
+    inline timer& schedule(const event_t& event, const duration_t& delay, const duration_t& period = {},
       type_t type = type_t::fixed_delay);
     inline bool scheduled(void) const;
 
@@ -81,10 +78,10 @@ namespace flib
 
     struct executor_t
     {
-      std::future<void> thread;
-      std::atomic<std::thread::id> thread_id;
-      std::atomic<clock_t::time_point> event_start{ clock_t::time_point() };
-      std::atomic<clock_t::time_point> event_end{ clock_t::time_point() };
+      std::thread thread;
+      std::future<void> result;
+      std::atomic<clock_t::time_point> event_start{ {} };
+      std::atomic<clock_t::time_point> event_end{ {} };
     };
 
     inline void run(executor_t* executor);
@@ -100,10 +97,8 @@ namespace flib
     std::atomic<state_t> m_state;
     std::condition_variable m_condition;
     configuration_t m_configuration;
-    mutable std::recursive_mutex m_configuration_mtx;
+    mutable std::mutex m_configuration_mtx;
     executor_t m_executor;
-    exception_handler_t m_exception_handler;
-    mutable std::mutex m_exception_handler_mtx;
   };
 }
 
@@ -111,51 +106,47 @@ namespace flib
 
 flib::timer::timer(void)
   : m_state(state_t::idle),
-  m_configuration{ {},duration_t(0),duration_t(0),type_t::fixed_delay }
+  m_configuration{ {}, {}, {}, type_t::fixed_delay }
 {
-  m_executor.thread = std::async(std::launch::async, &timer::run, this, &m_executor);
+  std::packaged_task<void(executor_t*)> task(std::bind(&timer::run, this, std::placeholders::_1));
+  m_executor.result = task.get_future();
+  m_executor.thread = decltype(executor_t::thread)(std::move(task), &m_executor);
 }
 
 flib::timer::~timer(void) noexcept
 {
   m_state = state_t::destruct;
-  if (m_executor.thread.valid())
+  if (m_executor.result.valid())
   {
     do
     {
       m_condition.notify_all();
-    } while (std::future_status::timeout == m_executor.thread.wait_for(std::chrono::milliseconds(1)));
+    } while (std::future_status::timeout == m_executor.result.wait_for(std::chrono::milliseconds(1)));
+  }
+  if (m_executor.thread.joinable())
+  {
+    m_executor.thread.join();
   }
 }
 
-void flib::timer::cancel(void)
+flib::timer& flib::timer::cancel(void)
 {
   m_state = state_t::idle;
   m_condition.notify_all();
+  return *this;
 }
 
 flib::timer::diagnostics_t flib::timer::diagnostics(void) const
 {
   return {
-    m_executor.thread_id,
-    m_executor.thread.valid() && std::future_status::ready != m_executor.thread.wait_for(std::chrono::seconds(0)),
+    m_executor.thread.get_id(),
+    m_executor.result.valid() && std::future_status::ready != m_executor.result.wait_for(std::chrono::seconds(0)),
     m_executor.event_start,
     m_executor.event_end
   };
 }
 
-void flib::timer::handle_exceptions(exception_handler_t&& handler)
-{
-  std::lock_guard<decltype(m_exception_handler_mtx)> exception_handler_guard(m_exception_handler_mtx);
-  m_exception_handler = handler;
-}
-
-void flib::timer::handle_exceptions(const exception_handler_t& handler)
-{
-  handle_exceptions(exception_handler_t(handler));
-}
-
-void flib::timer::reschedule(void)
+flib::timer& flib::timer::reschedule(void)
 {
   std::unique_lock<decltype(m_configuration_mtx)> configuration_guard(m_configuration_mtx);
   if (!m_configuration.event)
@@ -165,9 +156,10 @@ void flib::timer::reschedule(void)
   configuration_guard.unlock();
   m_state = state_t::activating;
   m_condition.notify_all();
+  return *this;
 }
 
-void flib::timer::schedule(event_t&& event, duration_t&& delay, duration_t&& period, type_t type)
+flib::timer& flib::timer::schedule(event_t&& event, duration_t&& delay, duration_t&& period, type_t type)
 {
   if (!event)
   {
@@ -179,11 +171,13 @@ void flib::timer::schedule(event_t&& event, duration_t&& delay, duration_t&& per
   configuration_guard.unlock();
   m_state = state_t::activating;
   m_condition.notify_all();
+  return *this;
 }
 
-void flib::timer::schedule(const event_t& event, const duration_t& delay, const duration_t& period, type_t type)
+flib::timer& flib::timer::schedule(const event_t& event, const duration_t& delay, const duration_t& period,
+  type_t type)
 {
-  schedule(event_t(event), duration_t(delay), duration_t(period), type);
+  return schedule(event_t(event), duration_t(delay), duration_t(period), type);
 }
 
 bool flib::timer::scheduled(void) const
@@ -195,15 +189,14 @@ void flib::timer::run(executor_t* executor)
 {
   try
   {
-    executor->thread_id = std::this_thread::get_id();
     configuration_t configuration;
     std::mutex condition_mtx;
     std::unique_lock<decltype(condition_mtx)> condition_guard(condition_mtx);
     std::unique_lock<decltype(m_configuration_mtx)> configuration_guard(m_configuration_mtx, std::defer_lock);
     clock_t::time_point event_time;
-    auto scheduled_execution = [&]()
+    auto scheduled_execution = [&]
     {
-      m_condition.wait_until(condition_guard, event_time, [this, &event_time]()
+      m_condition.wait_until(condition_guard, event_time, [this, &event_time]
         {
           return event_time <= clock_t::now() || state_t::active != m_state;
         }
@@ -218,7 +211,7 @@ void flib::timer::run(executor_t* executor)
     };
     while (state_t::destruct != m_state)
     {
-      m_condition.wait(condition_guard, [this]()
+      m_condition.wait(condition_guard, [this]
         {
           return state_t::destruct == m_state || state_t::activating == m_state;
         }
@@ -233,7 +226,7 @@ void flib::timer::run(executor_t* executor)
       configuration_guard.unlock();
       event_time = clock_t::now() + configuration.delay;
       scheduled_execution();
-      if (state_t::active == m_state && duration_t(0) == configuration.period)
+      if (state_t::active == m_state && duration_t{} == configuration.period)
       {
         m_state = state_t::idle;
       }
@@ -254,12 +247,6 @@ void flib::timer::run(executor_t* executor)
   catch (...)
   {
     m_state = state_t::destruct;
-    std::unique_lock<decltype(m_exception_handler_mtx)> exception_handler_guard(m_exception_handler_mtx);
-    auto exception_handler = m_exception_handler;
-    exception_handler_guard.unlock();
-    if (exception_handler)
-    {
-      exception_handler(std::current_exception());
-    }
+    std::terminate();
   }
 }

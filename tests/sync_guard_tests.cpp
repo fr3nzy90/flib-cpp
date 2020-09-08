@@ -25,8 +25,10 @@ TEST_CASE("Sync_guard tests - Sanity check", "[sync_guard]")
 {
   flib::sync_guard guard;
   REQUIRE(0 == guard.size());
-  REQUIRE(guard.lock(0));
+  REQUIRE(0 == guard.level());
+  REQUIRE(decltype(guard)::result_t::normal == guard.lock(0));
   REQUIRE(0 == guard.size());
+  REQUIRE(0 == guard.level());
 }
 
 TEST_CASE("Sync_guard tests - Locking", "[sync_guard]")
@@ -35,19 +37,25 @@ TEST_CASE("Sync_guard tests - Locking", "[sync_guard]")
   {
     flib::sync_guard guard;
     REQUIRE(0 == guard.size());
+    REQUIRE(0 == guard.level());
     guard.unlock();
-    REQUIRE(guard.lock(1, decltype(guard)::duration_t(1000)));
+    REQUIRE(1 == guard.level());
+    REQUIRE(decltype(guard)::result_t::normal == guard.lock(1, decltype(guard)::duration_t(1000)));
     REQUIRE(0 == guard.size());
+    REQUIRE(1 == guard.level());
   }
   SECTION("Complex unlock-lock")
   {
     flib::sync_guard guard;
     std::atomic<uint32_t> reference(0);
     REQUIRE(0 == guard.size());
+    REQUIRE(0 == guard.level());
     guard.unlock();
-    auto task = std::async(std::launch::async, [&reference, &guard]()
+    REQUIRE(1 == guard.level());
+    auto task = std::async(std::launch::async, [&reference, &guard]
       {
-        if (guard.lock(2, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
+        if (testing::remove_reference_t<decltype(guard)>::result_t::normal ==
+          guard.lock(2, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
         {
           ++reference;
         }
@@ -55,9 +63,12 @@ TEST_CASE("Sync_guard tests - Locking", "[sync_guard]")
     );
     testing::sleep_for(std::chrono::milliseconds(50));
     REQUIRE(1 == guard.size());
+    REQUIRE(1 == guard.level());
     guard.unlock();
+    REQUIRE(2 == guard.level());
     task.get();
     REQUIRE(0 == guard.size());
+    REQUIRE(2 == guard.level());
     REQUIRE(1 == reference);
   }
   SECTION("Basic lock-unlock")
@@ -65,9 +76,11 @@ TEST_CASE("Sync_guard tests - Locking", "[sync_guard]")
     flib::sync_guard guard;
     std::atomic<uint32_t> reference(0);
     REQUIRE(0 == guard.size());
-    auto task = std::async(std::launch::async, [&reference, &guard]()
+    REQUIRE(0 == guard.level());
+    auto task = std::async(std::launch::async, [&reference, &guard]
       {
-        if (guard.lock(2, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
+        if (testing::remove_reference_t<decltype(guard)>::result_t::normal ==
+          guard.lock(2, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
         {
           ++reference;
         }
@@ -75,11 +88,15 @@ TEST_CASE("Sync_guard tests - Locking", "[sync_guard]")
     );
     testing::sleep_for(std::chrono::milliseconds(50));
     REQUIRE(1 == guard.size());
+    REQUIRE(0 == guard.level());
     guard.unlock();
     REQUIRE(1 == guard.size());
+    REQUIRE(1 == guard.level());
     guard.unlock();
+    REQUIRE(2 == guard.level());
     task.get();
     REQUIRE(0 == guard.size());
+    REQUIRE(2 == guard.level());
     REQUIRE(1 == reference);
   }
   SECTION("Complex lock-unlock")
@@ -87,25 +104,29 @@ TEST_CASE("Sync_guard tests - Locking", "[sync_guard]")
     flib::sync_guard guard;
     std::atomic<uint32_t> reference(0);
     REQUIRE(0 == guard.size());
-    auto task1 = std::async(std::launch::async, [&reference, &guard]()
+    REQUIRE(0 == guard.level());
+    auto task1 = std::async(std::launch::async, [&reference, &guard]
       {
-        if (guard.lock(2, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
+        if (testing::remove_reference_t<decltype(guard)>::result_t::normal ==
+          guard.lock(2, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
         {
           ++reference;
         }
       }
     );
-    auto task2 = std::async(std::launch::async, [&reference, &guard]()
+    auto task2 = std::async(std::launch::async, [&reference, &guard]
       {
-        if (guard.lock(2, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
+        if (testing::remove_reference_t<decltype(guard)>::result_t::normal ==
+          guard.lock(2, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
         {
           ++reference;
         }
       }
     );
-    auto task3 = std::async(std::launch::async, [&reference, &guard]()
+    auto task3 = std::async(std::launch::async, [&reference, &guard]
       {
-        if (guard.lock(3, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
+        if (testing::remove_reference_t<decltype(guard)>::result_t::normal ==
+          guard.lock(3, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
         {
           ++reference;
         }
@@ -113,16 +134,22 @@ TEST_CASE("Sync_guard tests - Locking", "[sync_guard]")
     );
     testing::sleep_for(std::chrono::milliseconds(50));
     REQUIRE(3 == guard.size());
+    REQUIRE(0 == guard.level());
     guard.unlock();
+    REQUIRE(1 == guard.level());
     REQUIRE(3 == guard.size());
     guard.unlock();
+    REQUIRE(2 == guard.level());
     task1.get();
     task2.get();
     REQUIRE(1 == guard.size());
+    REQUIRE(2 == guard.level());
     REQUIRE(2 == reference);
     guard.unlock();
+    REQUIRE(3 == guard.level());
     task3.get();
     REQUIRE(0 == guard.size());
+    REQUIRE(3 == guard.level());
     REQUIRE(3 == reference);
   }
   SECTION("Basic lock-unlock all")
@@ -130,9 +157,11 @@ TEST_CASE("Sync_guard tests - Locking", "[sync_guard]")
     flib::sync_guard guard;
     std::atomic<uint32_t> reference(0);
     REQUIRE(0 == guard.size());
-    auto task = std::async(std::launch::async, [&reference, &guard]()
+    REQUIRE(0 == guard.level());
+    auto task = std::async(std::launch::async, [&reference, &guard]
       {
-        if (guard.lock(2, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
+        if (testing::remove_reference_t<decltype(guard)>::result_t::normal ==
+          guard.lock(2, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
         {
           ++reference;
         }
@@ -140,9 +169,12 @@ TEST_CASE("Sync_guard tests - Locking", "[sync_guard]")
     );
     testing::sleep_for(std::chrono::milliseconds(50));
     REQUIRE(1 == guard.size());
+    REQUIRE(0 == guard.level());
     guard.unlock_all();
+    REQUIRE(static_cast<decltype(guard)::level_t>(-1) == guard.level());
     task.get();
     REQUIRE(0 == guard.size());
+    REQUIRE(static_cast<decltype(guard)::level_t>(-1) == guard.level());
     REQUIRE(1 == reference);
   }
   SECTION("Complex lock-unlock all")
@@ -150,25 +182,29 @@ TEST_CASE("Sync_guard tests - Locking", "[sync_guard]")
     flib::sync_guard guard;
     std::atomic<uint32_t> reference(0);
     REQUIRE(0 == guard.size());
-    auto task1 = std::async(std::launch::async, [&reference, &guard]()
+    REQUIRE(0 == guard.level());
+    auto task1 = std::async(std::launch::async, [&reference, &guard]
       {
-        if (guard.lock(2, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
+        if (testing::remove_reference_t<decltype(guard)>::result_t::normal ==
+          guard.lock(2, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
         {
           ++reference;
         }
       }
     );
-    auto task2 = std::async(std::launch::async, [&reference, &guard]()
+    auto task2 = std::async(std::launch::async, [&reference, &guard]
       {
-        if (guard.lock(2, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
+        if (testing::remove_reference_t<decltype(guard)>::result_t::normal ==
+          guard.lock(2, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
         {
           ++reference;
         }
       }
     );
-    auto task3 = std::async(std::launch::async, [&reference, &guard]()
+    auto task3 = std::async(std::launch::async, [&reference, &guard]
       {
-        if (guard.lock(3, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
+        if (testing::remove_reference_t<decltype(guard)>::result_t::normal ==
+          guard.lock(3, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
         {
           ++reference;
         }
@@ -176,11 +212,14 @@ TEST_CASE("Sync_guard tests - Locking", "[sync_guard]")
     );
     testing::sleep_for(std::chrono::milliseconds(50));
     REQUIRE(3 == guard.size());
+    REQUIRE(0 == guard.level());
     guard.unlock_all();
+    REQUIRE(static_cast<decltype(guard)::level_t>(-1) == guard.level());
     task1.get();
     task2.get();
     task3.get();
     REQUIRE(0 == guard.size());
+    REQUIRE(static_cast<decltype(guard)::level_t>(-1) == guard.level());
     REQUIRE(3 == reference);
   }
 }
@@ -190,9 +229,11 @@ TEST_CASE("Sync_guard tests - Resetting", "[sync_guard]")
   flib::sync_guard guard;
   std::atomic<uint32_t> reference(0);
   REQUIRE(0 == guard.size());
-  auto task = std::async(std::launch::async, [&reference, &guard]()
+  REQUIRE(0 == guard.level());
+  auto task = std::async(std::launch::async, [&reference, &guard]
     {
-      if (guard.lock(2, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
+      if (testing::remove_reference_t<decltype(guard)>::result_t::normal ==
+        guard.lock(2, testing::remove_reference_t<decltype(guard)>::duration_t(1000)))
       {
         ++reference;
       }
@@ -200,14 +241,20 @@ TEST_CASE("Sync_guard tests - Resetting", "[sync_guard]")
   );
   testing::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(1 == guard.size());
+  REQUIRE(0 == guard.level());
   guard.unlock();
+  REQUIRE(1 == guard.level());
   REQUIRE(1 == guard.size());
   guard.reset();
+  REQUIRE(0 == guard.level());
   guard.unlock();
   REQUIRE(1 == guard.size());
+  REQUIRE(1 == guard.level());
   guard.unlock();
+  REQUIRE(2 == guard.level());
   task.get();
   REQUIRE(0 == guard.size());
+  REQUIRE(2 == guard.level());
   REQUIRE(1 == reference);
 }
 
@@ -216,9 +263,11 @@ TEST_CASE("Sync_guard tests - Timeouting", "[sync_guard]")
   flib::sync_guard guard;
   std::atomic<uint32_t> reference(0);
   REQUIRE(0 == guard.size());
-  auto task = std::async(std::launch::async, [&reference, &guard]()
+  REQUIRE(0 == guard.level());
+  auto task = std::async(std::launch::async, [&reference, &guard]
     {
-      if (!guard.lock(1, testing::remove_reference_t<decltype(guard)>::duration_t(100)))
+      if (testing::remove_reference_t<decltype(guard)>::result_t::timeout ==
+        guard.lock(1, testing::remove_reference_t<decltype(guard)>::duration_t(100)))
       {
         ++reference;
       }
@@ -226,7 +275,9 @@ TEST_CASE("Sync_guard tests - Timeouting", "[sync_guard]")
   );
   testing::sleep_for(std::chrono::milliseconds(50));
   REQUIRE(1 == guard.size());
+  REQUIRE(0 == guard.level());
   task.get();
   REQUIRE(0 == guard.size());
+  REQUIRE(0 == guard.level());
   REQUIRE(1 == reference);
 }
