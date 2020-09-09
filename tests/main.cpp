@@ -28,14 +28,7 @@
 #include <catch2/catch.hpp>
 
 // safeguard against redefinition link issue in case of multiple header inclusion within single compilation unit
-#include "flib/binary.hpp"
-#include "flib/dll.hpp"
-#include "flib/observable.hpp"
-#include "flib/sync_guard.hpp"
-#include "flib/sync_queue.hpp"
-#include "flib/timer.hpp"
-#include "flib/version.hpp"
-#include "flib/worker.hpp"
+#include "flib/flib.hpp"
 
 int main(int argc, char* argv[]) {
 #if defined(_DEBUG) & defined(_MSC_VER)

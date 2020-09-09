@@ -19,9 +19,11 @@
 
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
-#include <cstdlib>
+
+#if defined(_WIN32)
+#  include <cstdlib>
+#endif
 
 namespace flib
 {

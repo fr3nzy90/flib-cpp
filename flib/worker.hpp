@@ -39,83 +39,87 @@ namespace flib
   class worker
   {
   public:
-    using clock_t = std::chrono::steady_clock;
     using invocation_t = std::weak_ptr<void>;
     using priority_t = uint8_t;
+    using size_t = std::size_t;
     using task_t = std::function<void(void)>;
+    using thread_id_t = std::thread::id;
+    using time_point = std::chrono::steady_clock::time_point;
 
     struct diagnostics_t
     {
-      std::thread::id thread_id;
+      thread_id_t thread_id;
       bool active;
-      clock_t::time_point task_start;
-      clock_t::time_point task_end;
+      time_point task_start;
+      time_point task_end;
     };
 
-    explicit inline worker(bool enabled = true, std::size_t executors = 1);
+    using diagnostics_list_t = std::list<diagnostics_t>;
+
+    explicit inline worker(bool enabled = true, size_t executors = 1);
     inline worker(const worker&) = delete;
-    inline worker(worker&&) = default;
+    inline worker(worker&&) = delete;
     inline ~worker(void) noexcept;
     inline worker& operator=(const worker&) = delete;
-    inline worker& operator=(worker&&) = default;
+    inline worker& operator=(worker&&) = delete;
     inline worker& cancel(const invocation_t& invocation);
     inline worker& clear(void);
-    inline std::list<diagnostics_t> diagnostics(void) const;
+    inline diagnostics_list_t diagnostics(void) const;
     inline worker& disable(void);
     inline bool empty(void) const;
     inline worker& enable(void);
     inline bool enabled(void) const;
-    inline worker& executors(std::size_t executors);
-    inline std::size_t executors(void) const;
+    inline worker& executors(size_t executors);
+    inline size_t executors(void) const;
     inline invocation_t invoke(task_t&& task, priority_t priority = 0);
     inline invocation_t invoke(const task_t& task, priority_t priority = 0);
     inline bool invoked(const invocation_t& invocation) const;
-    inline std::size_t size(void) const;
+    inline size_t size(void) const;
 
-  private:
-    struct extended_task_t
+  protected:
+    struct _extended_task_t
     {
       task_t task;
       priority_t priority;
     };
 
-    struct executor_t
+    struct _executor_t
     {
       std::thread thread;
       std::future<void> result;
-      std::atomic<clock_t::time_point> task_start{ {} };
-      std::atomic<clock_t::time_point> task_end{ {} };
+      std::atomic<decltype(diagnostics_t::task_start)> task_start{ {} };
+      std::atomic<decltype(diagnostics_t::task_end)> task_end{ {} };
     };
 
-    inline void start(void);
-    inline void stop(void);
-    inline void run(executor_t* executor);
+    inline void _start(void);
+    inline void _stop(void);
+    inline void _run(_executor_t* executor);
 
     std::atomic<bool> m_enabled;
     std::condition_variable m_condition;
-    std::list<std::shared_ptr<extended_task_t>> m_tasks;
+    std::list<std::shared_ptr<_extended_task_t>> m_tasks;
     mutable std::mutex m_tasks_mtx;
-    std::list<executor_t> m_executors;
+    std::list<_executor_t> m_executors;
     mutable std::mutex m_executors_mtx;
   };
 }
 
 // IMPLEMENTATION
 
-flib::worker::worker(bool enabled, std::size_t executors)
+flib::worker::worker(bool enabled, size_t executors)
   : m_enabled(false),
   m_executors(executors)
 {
   if (enabled)
   {
-    start();
+    _start();
   }
 }
 
 flib::worker::~worker(void) noexcept
 {
   std::lock_guard<decltype(m_executors_mtx)> executors_guard(m_executors_mtx);
-  stop();
+  _stop();
 }
 
 flib::worker& flib::worker::cancel(const invocation_t& invocation)
@@ -132,10 +136,10 @@ flib::worker& flib::worker::clear(void)
   return *this;
 }
 
-std::list<flib::worker::diagnostics_t> flib::worker::diagnostics(void) const
+flib::worker::diagnostics_list_t flib::worker::diagnostics(void) const
 {
   std::lock_guard<decltype(m_executors_mtx)> executors_guard(m_executors_mtx);
-  std::list<diagnostics_t> result;
+  diagnostics_list_t result;
   for (const auto& executor : m_executors)
   {
     result.push_back({
@@ -151,7 +155,7 @@ std::list<flib::worker::diagnostics_t> flib::worker::diagnostics(void) const
 flib::worker& flib::worker::disable(void)
 {
   std::lock_guard<decltype(m_executors_mtx)> executors_guard(m_executors_mtx);
-  stop();
+  _stop();
   return *this;
 }
 
@@ -164,7 +168,7 @@ bool flib::worker::empty(void) const
 flib::worker& flib::worker::enable(void)
 {
   std::lock_guard<decltype(m_executors_mtx)> executors_guard(m_executors_mtx);
-  start();
+  _start();
   return *this;
 }
 
@@ -173,26 +177,26 @@ bool flib::worker::enabled(void) const
   return m_enabled;
 }
 
-flib::worker& flib::worker::executors(std::size_t executors)
+flib::worker& flib::worker::executors(size_t executors)
 {
   std::lock_guard<decltype(m_executors_mtx)> executors_guard(m_executors_mtx);
   auto enabled = m_enabled.load();
   if (enabled)
   {
-    stop();
+    _stop();
   }
   m_executors.resize(executors);
   if (enabled)
   {
-    start();
+    _start();
   }
   return *this;
 }
 
-std::size_t flib::worker::executors(void) const
+flib::worker::size_t flib::worker::executors(void) const
 {
   std::lock_guard<decltype(m_executors_mtx)> executors_guard(m_executors_mtx);
-  return m_executors.size();
+  return static_cast<size_t>(m_executors.size());
 }
 
 flib::worker::invocation_t flib::worker::invoke(task_t&& task, priority_t priority)
@@ -224,13 +228,13 @@ bool flib::worker::invoked(const invocation_t& invocation) const
     std::static_pointer_cast<decltype(m_tasks)::value_type::element_type>(invocation.lock()));
 }
 
-std::size_t flib::worker::size(void) const
+flib::worker::size_t flib::worker::size(void) const
 {
   std::lock_guard<decltype(m_tasks_mtx)> tasks_guard(m_tasks_mtx);
-  return m_tasks.size();
+  return static_cast<size_t>(m_tasks.size());
 }
 
-void flib::worker::start(void)
+void flib::worker::_start(void)
 {
   m_enabled = true;
   for (auto& executor : m_executors)
@@ -239,13 +243,13 @@ void flib::worker::start(void)
     {
       continue;
     }
-    std::packaged_task<void(executor_t*)> task(std::bind(&worker::run, this, std::placeholders::_1));
+    std::packaged_task<void(_executor_t*)> task(std::bind(&worker::_run, this, std::placeholders::_1));
     executor.result = task.get_future();
-    executor.thread = decltype(executor_t::thread)(std::move(task), &executor);
+    executor.thread = decltype(_executor_t::thread)(std::move(task), &executor);
   }
 }
 
-void flib::worker::stop(void)
+void flib::worker::_stop(void)
 {
   for (const auto& executor : m_executors)
   {
@@ -271,11 +275,11 @@ void flib::worker::stop(void)
   }
 }
 
-void flib::worker::run(executor_t* executor)
+void flib::worker::_run(_executor_t* executor)
 {
   try
   {
-    task_t task;
+    decltype(decltype(m_tasks)::value_type::element_type::task) task;
     std::mutex condition_mtx;
     std::unique_lock<decltype(condition_mtx)> condition_guard(condition_mtx);
     std::unique_lock<decltype(m_tasks_mtx)> tasks_guard(m_tasks_mtx, std::defer_lock);
@@ -295,9 +299,9 @@ void flib::worker::run(executor_t* executor)
       task = m_tasks.front()->task;
       m_tasks.pop_front();
       tasks_guard.unlock();
-      executor->task_start = clock_t::now();
+      executor->task_start = decltype(diagnostics_t::task_start)::clock::now();
       task();
-      executor->task_end = clock_t::now();
+      executor->task_end = decltype(diagnostics_t::task_end)::clock::now();
       std::this_thread::yield();
     }
   }

@@ -19,12 +19,13 @@
 
 #pragma once
 
+#include <cstddef>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <set>
-#include <utility>
 #include <stdexcept>
+#include <utility>
 
 namespace flib
 {
@@ -33,24 +34,25 @@ namespace flib
   {
   public:
     using observer_t = std::function<void(const T&...)>;
+    using size_t = std::size_t;
     using subscription_t = std::weak_ptr<void>;
 
     inline observable(void) = default;
     inline observable(const observable&) = delete;
-    inline observable(observable&&) = default;
+    inline observable(observable&&) = delete;
     inline ~observable(void) = default;
     inline observable& operator=(const observable&) = delete;
-    inline observable& operator=(observable&&) = default;
+    inline observable& operator=(observable&&) = delete;
     inline observable& clear(void);
     inline bool empty(void) const;
     inline observable& publish(const T& ...args);
-    inline std::size_t size(void) const;
+    inline size_t size(void) const;
     inline subscription_t subscribe(const observer_t& observer);
     inline subscription_t subscribe(observer_t&& observer);
     inline bool subscribed(const subscription_t& subscription) const;
     inline observable& unsubscribe(const subscription_t& subscription);
 
-  private:
+  protected:
     std::set<std::shared_ptr<observer_t>> m_subscriptions;
     mutable std::mutex m_subscriptions_mtx;
   };
@@ -87,10 +89,10 @@ flib::observable<T...>& flib::observable<T...>::publish(const T& ...args)
 }
 
 template<class... T>
-std::size_t flib::observable<T...>::size(void) const
+typename flib::observable<T...>::size_t flib::observable<T...>::size(void) const
 {
   std::lock_guard<decltype(m_subscriptions_mtx)> subscriptions_guard(m_subscriptions_mtx);
-  return m_subscriptions.size();
+  return static_cast<size_t>(m_subscriptions.size());
 }
 
 template<class... T>

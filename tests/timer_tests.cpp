@@ -301,8 +301,8 @@ TEST_CASE("Timer tests - Diagnostics", "[timer]")
   std::atomic<uint32_t> reference(0);
   auto diagnostics = timer.diagnostics();
   REQUIRE(diagnostics.active);
-  REQUIRE(decltype(timer)::clock_t::time_point() == diagnostics.event_start);
-  REQUIRE(decltype(timer)::clock_t::time_point() == diagnostics.event_end);
+  REQUIRE(decltype(timer)::time_point() == diagnostics.event_start);
+  REQUIRE(decltype(timer)::time_point() == diagnostics.event_end);
   auto lastDiagnostics = diagnostics;
   auto event1 = [&reference]
   {

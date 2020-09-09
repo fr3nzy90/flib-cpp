@@ -486,8 +486,8 @@ TEST_CASE("Worker tests - Diagnostics", "[worker]")
       diagnostics = diagnostics_list.front();
     }
     REQUIRE(!diagnostics.active);
-    REQUIRE(decltype(worker)::clock_t::time_point() == diagnostics.task_start);
-    REQUIRE(decltype(worker)::clock_t::time_point() == diagnostics.task_end);
+    REQUIRE(decltype(worker)::time_point() == diagnostics.task_start);
+    REQUIRE(decltype(worker)::time_point() == diagnostics.task_end);
     auto last_diagnostics = diagnostics;
     worker.enable();
     {
@@ -581,11 +581,11 @@ TEST_CASE("Worker tests - Diagnostics", "[worker]")
       diagnostics2 = diagnostics_list.back();
     }
     REQUIRE(!diagnostics1.active);
-    REQUIRE(decltype(worker)::clock_t::time_point() == diagnostics1.task_start);
-    REQUIRE(decltype(worker)::clock_t::time_point() == diagnostics1.task_end);
+    REQUIRE(decltype(worker)::time_point() == diagnostics1.task_start);
+    REQUIRE(decltype(worker)::time_point() == diagnostics1.task_end);
     REQUIRE(!diagnostics2.active);
-    REQUIRE(decltype(worker)::clock_t::time_point() == diagnostics2.task_start);
-    REQUIRE(decltype(worker)::clock_t::time_point() == diagnostics2.task_end);
+    REQUIRE(decltype(worker)::time_point() == diagnostics2.task_start);
+    REQUIRE(decltype(worker)::time_point() == diagnostics2.task_end);
     auto last_diagnostics1 = diagnostics1;
     auto last_diagnostics2 = diagnostics2;
     worker.enable();

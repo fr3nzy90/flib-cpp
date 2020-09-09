@@ -22,6 +22,7 @@
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
+#include <cstddef>
 #include <cstdint>
 #include <mutex>
 
@@ -32,6 +33,7 @@ namespace flib
   public:
     using duration_t = std::chrono::milliseconds;
     using level_t = uint64_t;
+    using size_t = std::size_t;
 
     enum class result_t
     {
@@ -41,20 +43,20 @@ namespace flib
 
     inline sync_guard(void);
     inline sync_guard(const sync_guard&) = delete;
-    inline sync_guard(sync_guard&&) = default;
+    inline sync_guard(sync_guard&&) = delete;
     inline ~sync_guard(void) noexcept;
     inline sync_guard& operator=(const sync_guard&) = delete;
-    inline sync_guard& operator=(sync_guard&&) = default;
+    inline sync_guard& operator=(sync_guard&&) = delete;
     inline level_t level(void) const;
-    inline result_t lock(level_t level = 1, duration_t timeout = duration_t(0));
+    inline result_t lock(level_t level = 1, duration_t timeout = {});
     inline sync_guard& reset(void);
-    inline std::size_t size(void) const;
+    inline size_t size(void) const;
     inline sync_guard& unlock(void);
     inline sync_guard& unlock_all(void);
 
-  private:
+  protected:
     std::atomic<level_t> m_level;
-    std::atomic<std::size_t> m_locks;
+    std::atomic<size_t> m_locks;
     std::condition_variable m_condition;
   };
 }
@@ -87,7 +89,7 @@ flib::sync_guard::result_t flib::sync_guard::lock(level_t level, duration_t time
   std::unique_lock<decltype(condition_mtx)> condition_guard(condition_mtx);
   auto result = result_t::normal;
   ++m_locks;
-  if (duration_t(0) == timeout)
+  if (decltype(timeout){} == timeout)
   {
     m_condition.wait(condition_guard, unlocked);
   }
@@ -105,7 +107,7 @@ flib::sync_guard& flib::sync_guard::reset(void)
   return *this;
 }
 
-std::size_t flib::sync_guard::size(void) const
+flib::sync_guard::size_t flib::sync_guard::size(void) const
 {
   return m_locks;
 }

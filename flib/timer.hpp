@@ -28,22 +28,24 @@
 #include <mutex>
 #include <stdexcept>
 #include <thread>
+#include <utility>
 
 namespace flib
 {
   class timer
   {
   public:
-    using clock_t = std::chrono::steady_clock;
     using duration_t = std::chrono::milliseconds;
     using event_t = std::function<void(void)>;
+    using thread_id_t = std::thread::id;
+    using time_point = std::chrono::steady_clock::time_point;
 
     struct diagnostics_t
     {
-      std::thread::id thread_id;
+      thread_id_t thread_id;
       bool active;
-      clock_t::time_point event_start;
-      clock_t::time_point event_end;
+      time_point event_start;
+      time_point event_end;
     };
 
     enum class type_t
@@ -54,10 +56,10 @@ namespace flib
 
     inline timer(void);
     inline timer(const timer&) = delete;
-    inline timer(timer&&) = default;
+    inline timer(timer&&) = delete;
     inline ~timer(void) noexcept;
     inline timer& operator=(const timer&) = delete;
-    inline timer& operator=(timer&&) = default;
+    inline timer& operator=(timer&&) = delete;
     inline timer& cancel(void);
     inline diagnostics_t diagnostics(void) const;
     inline timer& reschedule(void);
@@ -67,8 +69,8 @@ namespace flib
       type_t type = type_t::fixed_delay);
     inline bool scheduled(void) const;
 
-  private:
-    struct configuration_t
+  protected:
+    struct _configuration_t
     {
       event_t event;
       duration_t delay;
@@ -76,17 +78,17 @@ namespace flib
       type_t type;
     };
 
-    struct executor_t
+    struct _executor_t
     {
       std::thread thread;
       std::future<void> result;
-      std::atomic<clock_t::time_point> event_start{ {} };
-      std::atomic<clock_t::time_point> event_end{ {} };
+      std::atomic<time_point> event_start{ {} };
+      std::atomic<time_point> event_end{ {} };
     };
 
-    inline void run(executor_t* executor);
+    inline void _run(_executor_t* executor);
 
-    enum class state_t
+    enum class _state_t
     {
       activating,
       active,
@@ -94,28 +96,28 @@ namespace flib
       destruct
     };
 
-    std::atomic<state_t> m_state;
+    std::atomic<_state_t> m_state;
     std::condition_variable m_condition;
-    configuration_t m_configuration;
+    _configuration_t m_configuration;
     mutable std::mutex m_configuration_mtx;
-    executor_t m_executor;
+    _executor_t m_executor;
   };
 }
 
 // IMPLEMENTATION
 
 flib::timer::timer(void)
-  : m_state(state_t::idle),
+  : m_state(_state_t::idle),
   m_configuration{ {}, {}, {}, type_t::fixed_delay }
 {
-  std::packaged_task<void(executor_t*)> task(std::bind(&timer::run, this, std::placeholders::_1));
+  std::packaged_task<void(_executor_t*)> task(std::bind(&timer::_run, this, std::placeholders::_1));
   m_executor.result = task.get_future();
-  m_executor.thread = decltype(executor_t::thread)(std::move(task), &m_executor);
+  m_executor.thread = decltype(_executor_t::thread)(std::move(task), &m_executor);
 }
 
 flib::timer::~timer(void) noexcept
 {
-  m_state = state_t::destruct;
+  m_state = _state_t::destruct;
   if (m_executor.result.valid())
   {
     do
@@ -131,7 +133,7 @@ flib::timer::~timer(void) noexcept
 
 flib::timer& flib::timer::cancel(void)
 {
-  m_state = state_t::idle;
+  m_state = _state_t::idle;
   m_condition.notify_all();
   return *this;
 }
@@ -154,7 +156,7 @@ flib::timer& flib::timer::reschedule(void)
     throw std::runtime_error("Invalid event");
   }
   configuration_guard.unlock();
-  m_state = state_t::activating;
+  m_state = _state_t::activating;
   m_condition.notify_all();
   return *this;
 }
@@ -165,11 +167,11 @@ flib::timer& flib::timer::schedule(event_t&& event, duration_t&& delay, duration
   {
     throw std::invalid_argument("Invalid event");
   }
-  m_state = state_t::idle;
+  m_state = _state_t::idle;
   std::unique_lock<decltype(m_configuration_mtx)> configuration_guard(m_configuration_mtx);
   m_configuration = { std::move(event), std::move(delay), std::move(period), std::move(type) };
   configuration_guard.unlock();
-  m_state = state_t::activating;
+  m_state = _state_t::activating;
   m_condition.notify_all();
   return *this;
 }
@@ -182,59 +184,59 @@ flib::timer& flib::timer::schedule(const event_t& event, const duration_t& delay
 
 bool flib::timer::scheduled(void) const
 {
-  return state_t::activating == m_state || state_t::active == m_state;
+  return _state_t::activating == m_state || _state_t::active == m_state;
 }
 
-void flib::timer::run(executor_t* executor)
+void flib::timer::_run(_executor_t* executor)
 {
   try
   {
-    configuration_t configuration;
+    _configuration_t configuration;
     std::mutex condition_mtx;
     std::unique_lock<decltype(condition_mtx)> condition_guard(condition_mtx);
     std::unique_lock<decltype(m_configuration_mtx)> configuration_guard(m_configuration_mtx, std::defer_lock);
-    clock_t::time_point event_time;
+    time_point event_time;
     auto scheduled_execution = [&]
     {
       m_condition.wait_until(condition_guard, event_time, [this, &event_time]
         {
-          return event_time <= clock_t::now() || state_t::active != m_state;
+          return event_time <= time_point::clock::now() || _state_t::active != m_state;
         }
       );
-      if (state_t::active == m_state)
+      if (_state_t::active == m_state)
       {
-        executor->event_start = clock_t::now();
+        executor->event_start = time_point::clock::now();
         configuration.event();
-        executor->event_end = clock_t::now();
+        executor->event_end = time_point::clock::now();
         std::this_thread::yield();
       }
     };
-    while (state_t::destruct != m_state)
+    while (_state_t::destruct != m_state)
     {
       m_condition.wait(condition_guard, [this]
         {
-          return state_t::destruct == m_state || state_t::activating == m_state;
+          return _state_t::destruct == m_state || _state_t::activating == m_state;
         }
       );
-      if (state_t::activating != m_state)
+      if (_state_t::activating != m_state)
       {
         continue;
       }
-      m_state = state_t::active;
+      m_state = _state_t::active;
       configuration_guard.lock();
       configuration = m_configuration;
       configuration_guard.unlock();
-      event_time = clock_t::now() + configuration.delay;
+      event_time = time_point::clock::now() + configuration.delay;
       scheduled_execution();
-      if (state_t::active == m_state && duration_t{} == configuration.period)
+      if (_state_t::active == m_state && decltype(configuration.period){} == configuration.period)
       {
-        m_state = state_t::idle;
+        m_state = _state_t::idle;
       }
-      while (state_t::active == m_state)
+      while (_state_t::active == m_state)
       {
         if (type_t::fixed_delay == configuration.type)
         {
-          event_time = clock_t::now() + configuration.period;
+          event_time = time_point::clock::now() + configuration.period;
         }
         else
         {
@@ -246,7 +248,7 @@ void flib::timer::run(executor_t* executor)
   }
   catch (...)
   {
-    m_state = state_t::destruct;
+    m_state = _state_t::destruct;
     std::terminate();
   }
 }

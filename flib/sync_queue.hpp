@@ -28,6 +28,7 @@
 #include <list>
 #include <mutex>
 #include <stdexcept>
+#include <utility>
 
 namespace flib
 {
@@ -38,26 +39,27 @@ namespace flib
     using duration_t = std::chrono::milliseconds;
     using element_t = T;
     using priority_t = uint8_t;
+    using size_t = std::size_t;
 
     inline sync_queue(bool enabled = true);
     inline sync_queue(const sync_queue&) = delete;
-    inline sync_queue(sync_queue&&) = default;
+    inline sync_queue(sync_queue&&) = delete;
     inline ~sync_queue(void) noexcept;
     inline sync_queue& operator=(const sync_queue&) = delete;
-    inline sync_queue& operator=(sync_queue&&) = default;
+    inline sync_queue& operator=(sync_queue&&) = delete;
     inline sync_queue& clear(void);
     inline sync_queue& disable(void);
     inline bool empty(void) const;
     inline sync_queue& enable(void);
     inline bool enabled(void) const;
-    inline element_t pop(duration_t timeout = duration_t(0));
+    inline element_t pop(duration_t timeout = {});
     inline element_t pop_raw(void);
     inline sync_queue& push(const element_t& object, priority_t priority = 0);
     inline sync_queue& push(element_t&& object, priority_t priority = 0);
-    inline std::size_t size(void) const;
+    inline size_t size(void) const;
 
-  private:
-    struct extended_element_t
+  protected:
+    struct _extended_element_t
     {
       element_t element;
       priority_t priority;
@@ -65,7 +67,7 @@ namespace flib
 
     std::atomic<bool> m_enabled;
     std::condition_variable m_condition;
-    std::list<extended_element_t> m_objects;
+    std::list<_extended_element_t> m_objects;
     mutable std::mutex m_objects_mtx;
   };
 }
@@ -126,7 +128,7 @@ bool flib::sync_queue<T>::enabled(void) const
 template<class T>
 typename flib::sync_queue<T>::element_t flib::sync_queue<T>::pop(duration_t timeout)
 {
-  auto timepoint = std::chrono::high_resolution_clock::now() + timeout;
+  auto timepoint = std::chrono::steady_clock::now() + timeout;
   auto condition_check = [this]
   {
     std::lock_guard<decltype(m_objects_mtx)> objects_guard(m_objects_mtx);
@@ -145,7 +147,7 @@ typename flib::sync_queue<T>::element_t flib::sync_queue<T>::pop(duration_t time
       return object;
     }
     objects_guard.unlock();
-    if (duration_t(0) == timeout)
+    if (decltype(timeout){} == timeout)
     {
       m_condition.wait(condition_guard, condition_check);
     }
@@ -184,14 +186,14 @@ flib::sync_queue<T>& flib::sync_queue<T>::push(element_t&& object, priority_t pr
     [](decltype(priority) value, const typename decltype(m_objects)::value_type& element)
     {
       return value > element.priority;
-    }), extended_element_t{ std::move(object), priority });
+    }), _extended_element_t{ std::move(object), priority });
   m_condition.notify_one();
   return *this;
 }
 
 template<class T>
-std::size_t flib::sync_queue<T>::size(void) const
+typename flib::sync_queue<T>::size_t flib::sync_queue<T>::size(void) const
 {
   std::lock_guard<decltype(m_objects_mtx)> objects_guard(m_objects_mtx);
-  return m_objects.size();
+  return static_cast<size_t>(m_objects.size());
 }
