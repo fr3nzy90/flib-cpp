@@ -20,7 +20,6 @@
 #pragma once
 
 #include <functional>
-#include <memory>
 #include <stdexcept>
 #include <string>
 
@@ -33,261 +32,152 @@
 
 namespace flib
 {
-  // Type definitions for DLL handle
-  using dll_t = void*;
+  inline namespace dll
+  {
+    // Type definitions for DLL handle
+    using dll_t = void*;
 
-  // Function for loading DLL
-  // 
-  // Notes:
-  //   - DLLs maintains reference counter and will be loaded when it first increases from 0
-  //   - Function will throw std::runtime_error exception, if library loading fails
-  //
-  // Parameters:
-  //   filepath - path to DLL
-  //              Windows notes:
-  //                - If the string specifies a full path, the function searches only that path for the  module
-  //                - If the string specifies a relative path or a module name without a path, the function uses a
-  //                  standard search strategy to find the module
-  //                - When specifying a path, be sure to use backslashes \, not forward slashes /
-  //                - If the string specifies a module name without a path and the file name extension is omitted, the
-  //                  function appends the default library extension .dll to the module name. To prevent the function
-  //                  from appending .dll to the module name, include a trailing point character . in the module name
-  //                  string
-  //              Linux notes:
-  //                - If filename contains a slash /, then it is interpreted as a (relative or absolute) pathname.
-  //                  Otherwise, the dynamic linker searches for the library in the following order:
-  //                    - (ELF only) Using the directories specified in the DT_RPATH dynamic section attribute of
-  //                      the binary if present and DT_RUNPATH attribute does not exist. Use of DT_RPATH is deprecated
-  //                    - Using the environment variable LD_LIBRARY_PATH. Except if the executable is a
-  //                      set-user-ID/set-group-ID binary, in which case it is ignored
-  //                    - (ELF only) Using the directories specified in the DT_RUNPATH dynamic section attribute of the
-  //                      binary if present
-  //                    - From the cache file /etc/ld.so.cache, which contains a compiled list of candidate libraries
-  //                      previously found in the augmented library path. If, however, the binary was linked with the
-  //                      -z nodeflib linker option, libraries in the default library paths are skipped. Libraries
-  //                      installed in hardware capability directories are preferred to other libraries
-  //                    - In the default path /lib, and then /usr/lib. If the binary was linked with the -z nodeflib
-  //                      linker option, this step is skipped
-  //
-  // Returns:
-  //   DLL handle
-  inline dll_t open_library(const std::string& filepath);
+    // Function for loading DLL
+    // 
+    // Notes:
+    //   - DLLs maintains reference counter and will be loaded when it first increases from 0
+    //   - Function will throw std::runtime_error exception, if library loading fails
+    //
+    // Parameters:
+    //   filepath - path to DLL
+    //              Windows notes:
+    //                - If the string specifies a full path, the function searches only that path for the  module
+    //                - If the string specifies a relative path or a module name without a path, the function uses a
+    //                  standard search strategy to find the module
+    //                - When specifying a path, be sure to use backslashes \, not forward slashes /
+    //                - If the string specifies a module name without a path and the file name extension is omitted, the
+    //                  function appends the default library extension .dll to the module name. To prevent the function
+    //                  from appending .dll to the module name, include a trailing point character . in the module name
+    //                  string
+    //              Linux notes:
+    //                - If filename contains a slash /, then it is interpreted as a (relative or absolute) pathname.
+    //                  Otherwise, the dynamic linker searches for the library in the following order:
+    //                    - (ELF only) Using the directories specified in the DT_RPATH dynamic section attribute of
+    //                      the binary if present and DT_RUNPATH attribute does not exist. Use of DT_RPATH is deprecated
+    //                    - Using the environment variable LD_LIBRARY_PATH. Except if the executable is a
+    //                      set-user-ID/set-group-ID binary, in which case it is ignored
+    //                    - (ELF only) Using the directories specified in the DT_RUNPATH dynamic section attribute of the
+    //                      binary if present
+    //                    - From the cache file /etc/ld.so.cache, which contains a compiled list of candidate libraries
+    //                      previously found in the augmented library path. If, however, the binary was linked with the
+    //                      -z nodeflib linker option, libraries in the default library paths are skipped. Libraries
+    //                      installed in hardware capability directories are preferred to other libraries
+    //                    - In the default path /lib, and then /usr/lib. If the binary was linked with the -z nodeflib
+    //                      linker option, this step is skipped
+    //
+    // Returns:
+    //   DLL handle
+    inline dll_t open_library(const std::string& filepath);
 
-  // Function for unloading DLL
-  // 
-  // Notes:
-  //   - DLLs maintains reference counter and will be unloaded when reference count reaches 0
-  //   - Function will throw std::invalid_argument exception if invalid DLL handle is given
-  //
-  // Parameters:
-  //   handle - DLL handle
-  //
-  // Returns:
-  //   DLL handle
-  inline void close_library(dll_t handle);
+    // Function for unloading DLL
+    // 
+    // Notes:
+    //   - DLLs maintains reference counter and will be unloaded when reference count reaches 0
+    //   - Function will throw std::invalid_argument exception if invalid DLL handle is given
+    //
+    // Parameters:
+    //   handle - DLL handle
+    //
+    // Returns:
+    //   DLL handle
+    inline void close_library(dll_t handle);
 
-  // Function for unloading DLL
-  // 
-  // Notes:
-  //   - DLLs maintains reference counter and will be unloaded when reference count reaches 0
-  //   - Function will throw std::invalid_argument exception if invalid DLL handle is given
-  //   - Function will throw std::runtime_error exception if library function retrieval fails
-  //
-  // Template parameters:
-  //   T - typename for casting of function handle. There is no checking if pointer can actually be casted
-  //
-  // Parameters:
-  //   handle - DLL handle
-  //     name - name of the exported function
-  //
-  // Returns:
-  //   DLL handle
-  template<class T>
-  inline std::function<T> get_library_function(dll_t handle, const std::string& name);
+    // Function for unloading DLL
+    // 
+    // Notes:
+    //   - DLLs maintains reference counter and will be unloaded when reference count reaches 0
+    //   - Function will throw std::invalid_argument exception if invalid DLL handle is given
+    //   - Function will throw std::runtime_error exception if library function retrieval fails
+    //
+    // Template parameters:
+    //   T - typename for casting of function handle. There is no checking if pointer can actually be casted
+    //
+    // Parameters:
+    //   handle - DLL handle
+    //     name - name of the exported function
+    //
+    // Returns:
+    //   DLL handle
+    template<class T>
+    inline std::function<T> get_library_function(dll_t handle, const std::string& name);
 
-  // Helper function for creating shared smart pointer to library object instance, which uses open_library,
-  // close_library and get_library_function functions, thus same notes apply as for them
-  // 
-  // Notes:
-  //   Library functions may be exported in the following way:
-  // 
-  //     extern "C" EXPORT_API void* object_constructor(void);
-  //     extern "C" EXPORT_API void  object_destructor(void* ptr);
-  //
-  //   where EXPORT_API macro may be defined as follows:
-  //
-  //     #if defined(_MSC_VER)
-  //     #  define EXPORT_API __declspec(dllexport)
-  //     #elif defined(__GNUC__)
-  //     #  define EXPORT_API __attribute__((visibility("default")))
-  //     #else
-  //     #  error "Unsupported compiler/platform"
-  //     #endif
-  //
-  // Template parameters:
-  //   T - library object typename. There is no checking if pointer can actually be casted
-  //
-  // Parameters:
-  //   filepath    - path to DLL. Same notes apply as for open_library function
-  //   constructor - library object constructor name of the exported function that is used to create object instance
-  //   destructor  - library object destructor name of the exported function that is used to destroy object instance
-  //
-  // Returns:
-  //   Shared smart pointer to library object instance
-  template<class T>
-  inline std::shared_ptr<T> make_shared_from_library(const std::string& filepath, const std::string& constructor,
-    const std::string& destructor);
+    // IMPLEMENTATION
 
-  // Helper function for creating unique smart pointer to library object instance, which uses open_library,
-  // close_library and get_library_function functions, thus same notes apply as for them
-  // 
-  // Notes:
-  //   Library functions may be exported in the following way:
-  // 
-  //     extern "C" EXPORT_API void* object_constructor(void);
-  //     extern "C" EXPORT_API void  object_destructor(void* ptr);
-  //
-  //   where EXPORT_API macro may be defined as follows:
-  //
-  //     #if defined(_MSC_VER)
-  //     #  define EXPORT_API __declspec(dllexport)
-  //     #elif defined(__GNUC__)
-  //     #  define EXPORT_API __attribute__((visibility("default")))
-  //     #else
-  //     #  error "Unsupported compiler/platform"
-  //     #endif
-  //
-  // Template parameters:
-  //   T - library object typename. There is no checking if pointer can actually be casted
-  //
-  // Parameters:
-  //   filepath    - path to DLL. Same notes apply as for open_library function
-  //   constructor - library object constructor name of the exported function that is used to create object instance
-  //   destructor  - library object destructor name of the exported function that is used to destroy object instance
-  //
-  // Returns:
-  //   Unique smart pointer to library object instance
-  template<class T>
-  inline std::unique_ptr<T, std::function<void(T*)>> make_unique_from_library(const std::string& filepath,
-    const std::string& constructor, const std::string& destructor);
-}
-
-// IMPLEMENTATION
-
-flib::dll_t flib::open_library(const std::string& filepath)
-{
+    dll_t open_library(const std::string& filepath)
+    {
 #if defined(_WIN32)
-  auto handle = ::LoadLibraryA(filepath.c_str());
-  if (!handle)
-  {
-    throw std::runtime_error("Module loading failed (code: " + std::to_string(::GetLastError()) + ")");
-  }
-  return handle;
-#elif defined(__linux__)
-  auto handle = ::dlopen(filepath.c_str(), RTLD_NOW | RTLD_GLOBAL);
-  if (!handle)
-  {
-    throw std::runtime_error("Module loading failed (reason: \"" + std::string(::dlerror()) + "\")");
-  }
-  return handle;
-#else
-#  error "Unsupported platform/compiler"
-#endif
-}
-
-void flib::close_library(dll_t handle)
-{
-#if defined(_WIN32)
-  auto module_handle = static_cast<HMODULE>(handle);
-  if (!module_handle)
-  {
-    throw std::invalid_argument("Invalid module handle");
-  }
-  ::FreeLibrary(module_handle);
-#elif defined(__linux__)
-  if (!handle)
-  {
-    throw std::invalid_argument("Invalid module handle");
-  }
-  ::dlclose(handle);
-#else
-#  error "Unsupported platform/compiler"
-#endif
-}
-
-template<class T>
-std::function<T> flib::get_library_function(dll_t handle, const std::string& name)
-{
-#if defined(_WIN32)
-  auto module_handle = static_cast<HMODULE>(handle);
-  if (!module_handle)
-  {
-    throw std::invalid_argument("Invalid module handle");
-  }
-  auto function_handle = ::GetProcAddress(module_handle, name.c_str());
-  if (!function_handle)
-  {
-    throw std::runtime_error("Function retrieval failed (code: " + std::to_string(::GetLastError()) + ")");
-  }
-  return { reinterpret_cast<T*>(function_handle) };
-#elif defined(__linux__)
-  if (!handle)
-  {
-    throw std::invalid_argument("Invalid module handle");
-  }
-  auto function_handle = ::dlsym(handle, name.c_str());
-  if (!function_handle)
-  {
-    throw std::runtime_error("Function retrieval failed (reason: \"" + std::string(::dlerror()) + "\")");
-  }
-  return { reinterpret_cast<T*>(function_handle) };
-#else
-#  error "Unsupported platform/compiler"
-#endif
-}
-
-template<class T>
-std::shared_ptr<T> flib::make_shared_from_library(const std::string& filepath, const std::string& constructor,
-  const std::string& destructor)
-{
-  auto library = open_library(filepath);
-  try
-  {
-    auto constructor_function = get_library_function<T* (void)>(library, constructor);
-    auto destructor_function = get_library_function<void(T*)>(library, destructor);
-    return std::shared_ptr<T>(constructor_function(), [library, destructor_function](T* ptr)
+      auto handle = ::LoadLibraryA(filepath.c_str());
+      if (!handle)
       {
-        destructor_function(ptr);
-        close_library(library);
+        throw std::runtime_error("Module loading failed (code: " + std::to_string(::GetLastError()) + ")");
       }
-    );
-  }
-  catch (...)
-  {
-    close_library(library);
-    throw;
-  }
-}
-
-template<class T>
-std::unique_ptr<T, std::function<void(T*)>> flib::make_unique_from_library(const std::string& filepath,
-  const std::string& constructor, const std::string& destructor)
-{
-  auto library = open_library(filepath);
-  try
-  {
-    auto constructor_function = get_library_function<T* (void)>(library, constructor);
-    auto destructor_function = get_library_function<void(T*)>(library, destructor);
-    return std::unique_ptr<T, std::function<void(T*)>>(constructor_function(), [library, destructor_function](T* ptr)
+      return handle;
+#elif defined(__linux__)
+      auto handle = ::dlopen(filepath.c_str(), RTLD_NOW | RTLD_GLOBAL);
+      if (!handle)
       {
-        destructor_function(ptr);
-        close_library(library);
+        throw std::runtime_error("Module loading failed (reason: \"" + std::string(::dlerror()) + "\")");
       }
-    );
-  }
-  catch (...)
-  {
-    close_library(library);
-    throw;
+      return handle;
+#else
+#  error "Unsupported platform/compiler"
+#endif
+    }
+
+    void close_library(dll_t handle)
+    {
+#if defined(_WIN32)
+      auto module_handle = static_cast<HMODULE>(handle);
+      if (!module_handle)
+      {
+        throw std::invalid_argument("Invalid module handle");
+      }
+      ::FreeLibrary(module_handle);
+#elif defined(__linux__)
+      if (!handle)
+      {
+        throw std::invalid_argument("Invalid module handle");
+      }
+      ::dlclose(handle);
+#else
+#  error "Unsupported platform/compiler"
+#endif
+    }
+
+    template<class T>
+    std::function<T> get_library_function(dll_t handle, const std::string& name)
+    {
+#if defined(_WIN32)
+      auto module_handle = static_cast<HMODULE>(handle);
+      if (!module_handle)
+      {
+        throw std::invalid_argument("Invalid module handle");
+      }
+      auto function_handle = ::GetProcAddress(module_handle, name.c_str());
+      if (!function_handle)
+      {
+        throw std::runtime_error("Function retrieval failed (code: " + std::to_string(::GetLastError()) + ")");
+      }
+      return { reinterpret_cast<T*>(function_handle) };
+#elif defined(__linux__)
+      if (!handle)
+      {
+        throw std::invalid_argument("Invalid module handle");
+      }
+      auto function_handle = ::dlsym(handle, name.c_str());
+      if (!function_handle)
+      {
+        throw std::runtime_error("Function retrieval failed (reason: \"" + std::string(::dlerror()) + "\")");
+      }
+      return { reinterpret_cast<T*>(function_handle) };
+#else
+#  error "Unsupported platform/compiler"
+#endif
+    }
   }
 }

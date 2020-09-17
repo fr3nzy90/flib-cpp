@@ -27,111 +27,114 @@
 
 namespace flib
 {
-  // Structure for determination of platform byte endianess
-  struct endianess
+  inline namespace binary
   {
-  public:
-    // Method for retrieving native platform byte endianess
-    //
-    // Returns:
-    //   native reference byte endianess
-    inline static uint8_t native(void);
-
-    enum : uint8_t
+    // Structure for determination of platform byte endianess
+    struct endianess
     {
-      // Big byte - reference byte endianess
-      big_byte = 0x76u,
-      // Big word - reference byte endianess
-      big_word = 0x54u,
-      // Little word - reference byte endianess
-      little_word = 0x32u,
-      // Little byte - reference byte endianess
-      little_byte = 0x10u
+    public:
+      // Method for retrieving native platform byte endianess
+      //
+      // Returns:
+      //   native reference byte endianess
+      inline static uint8_t native(void);
+
+      enum : uint8_t
+      {
+        // Big byte - reference byte endianess
+        big_byte = 0x76u,
+        // Big word - reference byte endianess
+        big_word = 0x54u,
+        // Little word - reference byte endianess
+        little_word = 0x32u,
+        // Little byte - reference byte endianess
+        little_byte = 0x10u
+      };
     };
-  };
 
-  // Method for inplace reversing bytes of 16-bit unsigned integer
-  //
-  // Parameters:
-  //   data - 16-bit unsigned integer
-  inline void byte_swap(uint16_t& data) noexcept;
+    // Method for inplace reversing bytes of 16-bit unsigned integer
+    //
+    // Parameters:
+    //   data - 16-bit unsigned integer
+    inline void byte_swap(uint16_t& data) noexcept;
 
-  // Method for reversing bytes of 32-bit unsigned integer
-  //
-  // Parameters:
-  //   data - 32-bit unsigned integer
-  inline void byte_swap(uint32_t& data) noexcept;
+    // Method for reversing bytes of 32-bit unsigned integer
+    //
+    // Parameters:
+    //   data - 32-bit unsigned integer
+    inline void byte_swap(uint32_t& data) noexcept;
 
-  // Method for reversing bytes of 64-bit unsigned integer
-  //
-  // Parameters:
-  //   data - 64-bit unsigned integer
-  inline void byte_swap(uint64_t& data) noexcept;
+    // Method for reversing bytes of 64-bit unsigned integer
+    //
+    // Parameters:
+    //   data - 64-bit unsigned integer
+    inline void byte_swap(uint64_t& data) noexcept;
 
-  // Method for inplace reversing bytes of given contiguous memory block
-  //
-  // Parameters:
-  //   start - Pointer to the first byte of contiguous memory block
-  //     end - Pointer to byte after last byte of contiguous memory block
-  inline void byte_swap(uint8_t* start, uint8_t* end) noexcept;
-}
+    // Method for inplace reversing bytes of given contiguous memory block
+    //
+    // Parameters:
+    //   start - Pointer to the first byte of contiguous memory block
+    //     end - Pointer to byte after last byte of contiguous memory block
+    inline void byte_swap(uint8_t* start, uint8_t* end) noexcept;
 
-// IMPLEMENTATION
+    // IMPLEMENTATION
 
-uint8_t flib::endianess::native(void)
-{
-  static uint8_t result = 0;
-  if (0 == result)
-  {
-    uint32_t value = 0x76543210ul;
-    result = reinterpret_cast<decltype(result)*>(&value)[0];
-  }
-  return result;
-}
+    uint8_t endianess::native(void)
+    {
+      static uint8_t result = 0;
+      if (0 == result)
+      {
+        uint32_t value = 0x76543210ul;
+        result = reinterpret_cast<uint8_t*>(&value)[0];
+      }
+      return result;
+    }
 
-void flib::byte_swap(uint16_t& data) noexcept
-{
+    void byte_swap(uint16_t& data) noexcept
+    {
 #if   defined(_MSC_VER)
-  data = _byteswap_ushort(data);
+      data = _byteswap_ushort(data);
 #elif defined(__GNUC__)
-  data = __builtin_bswap16(data);
+      data = __builtin_bswap16(data);
 #else
-  data = data >> 8 | data << 8;
+      data = data >> 8 | data << 8;
 #endif
-}
+    }
 
-void flib::byte_swap(uint32_t& data) noexcept
-{
+    void byte_swap(uint32_t& data) noexcept
+    {
 #if   defined(_MSC_VER)
-  data = _byteswap_ulong(data);
+      data = _byteswap_ulong(data);
 #elif defined(__GNUC__)
-  data = __builtin_bswap32(data);
+      data = __builtin_bswap32(data);
 #else
-  data = data >> 8 & 0x00ff00fful | data << 8 & 0xff00ff00ul;
-  data = data >> 16 | data << 16;
+      data = data >> 8 & 0x00ff00fful | data << 8 & 0xff00ff00ul;
+      data = data >> 16 | data << 16;
 #endif
-}
+    }
 
-void flib::byte_swap(uint64_t& data) noexcept
-{
+    void byte_swap(uint64_t& data) noexcept
+    {
 #if   defined(_MSC_VER)
-  data = _byteswap_uint64(data);
+      data = _byteswap_uint64(data);
 #elif defined(__GNUC__)
-  data = __builtin_bswap64(data);
+      data = __builtin_bswap64(data);
 #else
-  data = data >> 8 & 0x00ff00ff00ff00ffull | data << 8 & 0xff00ff00ff00ff00ull;
-  data = data >> 16 & 0x0000ffff0000ffffull | data << 16 & 0xffff0000ffff0000ull;
-  data = data >> 32 | data << 32;
+      data = data >> 8 & 0x00ff00ff00ff00ffull | data << 8 & 0xff00ff00ff00ff00ull;
+      data = data >> 16 & 0x0000ffff0000ffffull | data << 16 & 0xffff0000ffff0000ull;
+      data = data >> 32 | data << 32;
 #endif
-}
+    }
 
-void flib::byte_swap(uint8_t* start, uint8_t* end) noexcept
-{
-  uint8_t temp;
-  for (--end; start < end; ++start, --end)
-  {
-    temp = *start;
-    *start = *end;
-    *end = temp;
+    void byte_swap(uint8_t* start, uint8_t* end) noexcept
+    {
+      uint8_t temp;
+      for (--end; start < end; ++start, --end)
+      {
+        temp = *start;
+        *start = *end;
+        *end = temp;
+      }
+    }
   }
 }

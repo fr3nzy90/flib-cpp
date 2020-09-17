@@ -18,8 +18,6 @@
 set(project_name "tests")
 project(${project_name} DESCRIPTION "fr3nzy's library tests")
 
-include_directories("${CMAKE_CURRENT_SOURCE_DIR}/../test_plugin")
-
 source_group("/Header Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/[^/]*.hpp")
 source_group("/Source Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/[^/]*.cpp")
 
@@ -31,9 +29,9 @@ if(UNIX)
   add_definitions(-pthread)
 endif()
 
-add_executable(${project_name} ${src_files})
+add_executable(${project_name} ${src_files} )
 
-add_dependencies(${project_name} test_plugin)
+add_dependencies(${project_name} test_dll)
 
 if(UNIX)
   target_link_libraries(${project_name} pthread dl)

@@ -17,48 +17,72 @@
 * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include "flib/observable.hpp"
+#include <atomic>
+#include <cstdint>
+
+#include <flib/observable.hpp>
 
 #include "testing.hpp"
 
 TEST_CASE("Observable tests - Sanity check", "[observable]")
 {
-  flib::observable<> observable;
-  REQUIRE(0 == observable.size());
-  REQUIRE(observable.empty());
-  REQUIRE_THROWS_MATCHES(observable.subscribe({}), std::invalid_argument, Catch::Message("Invalid observer"));
+  SECTION("Default construction")
+  {
+    flib::observable<> observable;
+    REQUIRE(observable.empty());
+    REQUIRE(0 == observable.size());
+    REQUIRE(observable.subscribe({}).expired());
+    REQUIRE(observable.empty());
+    REQUIRE(0 == observable.size());
+  }
+  SECTION("Move construction")
+  {
+    auto observable{ flib::observable<>() };
+    REQUIRE(observable.empty());
+    REQUIRE(0 == observable.size());
+    REQUIRE(observable.subscribe({}).expired());
+    REQUIRE(observable.empty());
+    REQUIRE(0 == observable.size());
+  }
+  SECTION("Move assignment")
+  {
+    auto observable = flib::observable<>();
+    REQUIRE(observable.empty());
+    REQUIRE(0 == observable.size());
+    REQUIRE(observable.subscribe({}).expired());
+    REQUIRE(observable.empty());
+    REQUIRE(0 == observable.size());
+  }
 }
 
 TEST_CASE("Observable tests - Subscription cycle", "[observable]")
 {
   flib::observable<> observable;
-  REQUIRE(0 == observable.size());
-  REQUIRE(observable.empty());
   auto observer = [] {};
   auto subscription1 = observable.subscribe(observer);
   REQUIRE(!subscription1.expired());
   REQUIRE(observable.subscribed(subscription1));
-  REQUIRE(1 == observable.size());
   REQUIRE(!observable.empty());
+  REQUIRE(1 == observable.size());
   auto subscription2 = observable.subscribe(observer);
   REQUIRE(!subscription2.expired());
   REQUIRE(observable.subscribed(subscription2));
-  REQUIRE(2 == observable.size());
   REQUIRE(!observable.empty());
+  REQUIRE(2 == observable.size());
   observable.unsubscribe(subscription1);
   REQUIRE(subscription1.expired());
   REQUIRE(!observable.subscribed(subscription1));
   REQUIRE(!subscription2.expired());
   REQUIRE(observable.subscribed(subscription2));
-  REQUIRE(1 == observable.size());
   REQUIRE(!observable.empty());
+  REQUIRE(1 == observable.size());
   observable.unsubscribe(subscription2);
   REQUIRE(subscription1.expired());
   REQUIRE(!observable.subscribed(subscription1));
   REQUIRE(subscription2.expired());
   REQUIRE(!observable.subscribed(subscription2));
-  REQUIRE(0 == observable.size());
   REQUIRE(observable.empty());
+  REQUIRE(0 == observable.size());
   subscription1 = observable.subscribe(observer);
   REQUIRE(!subscription1.expired());
   REQUIRE(observable.subscribed(subscription1));
@@ -67,15 +91,15 @@ TEST_CASE("Observable tests - Subscription cycle", "[observable]")
   subscription2 = observable.subscribe(observer);
   REQUIRE(!subscription2.expired());
   REQUIRE(observable.subscribed(subscription2));
-  REQUIRE(2 == observable.size());
   REQUIRE(!observable.empty());
+  REQUIRE(2 == observable.size());
   observable.clear();
   REQUIRE(subscription1.expired());
   REQUIRE(!observable.subscribed(subscription1));
   REQUIRE(subscription2.expired());
   REQUIRE(!observable.subscribed(subscription2));
-  REQUIRE(0 == observable.size());
   REQUIRE(observable.empty());
+  REQUIRE(0 == observable.size());
 }
 
 TEST_CASE("Observable tests - Notification cycle", "[observable]")
@@ -92,6 +116,7 @@ TEST_CASE("Observable tests - Notification cycle", "[observable]")
   auto subscription2 = observable.subscribe(observer);
   REQUIRE(!subscription2.expired());
   REQUIRE(observable.subscribed(subscription2));
+  REQUIRE(!observable.empty());
   REQUIRE(2 == observable.size());
   REQUIRE(0 == reference);
   observable.publish();
@@ -102,6 +127,7 @@ TEST_CASE("Observable tests - Notification cycle", "[observable]")
   REQUIRE(!observable.subscribed(subscription1));
   REQUIRE(subscription2.expired());
   REQUIRE(!observable.subscribed(subscription2));
+  REQUIRE(observable.empty());
   REQUIRE(0 == observable.size());
   observable.publish();
   REQUIRE(4 == reference);
@@ -109,11 +135,11 @@ TEST_CASE("Observable tests - Notification cycle", "[observable]")
 
 TEST_CASE("Observable tests - Complex types", "[observable]")
 {
-  flib::observable<bool, int> observable;
+  flib::observable<bool, std::string> observable;
   std::atomic<uint32_t> reference(0);
-  auto observer = [&reference](bool arg1, int arg2)
+  auto observer = [&reference](bool arg1, const std::string& arg2)
   {
-    if (arg1 && 1 == arg2)
+    if (arg1 && "1" == arg2)
     {
       ++reference;
     }
@@ -124,20 +150,22 @@ TEST_CASE("Observable tests - Complex types", "[observable]")
   auto subscription2 = observable.subscribe(observer);
   REQUIRE(!subscription2.expired());
   REQUIRE(observable.subscribed(subscription2));
+  REQUIRE(!observable.empty());
   REQUIRE(2 == observable.size());
   REQUIRE(0 == reference);
-  observable.publish(true, 1);
+  observable.publish(true, "1");
   REQUIRE(2 == reference);
-  observable.publish(false, 1);
+  observable.publish(false, "1");
   REQUIRE(2 == reference);
-  observable.publish(true, 1);
+  observable.publish(true, "1");
   REQUIRE(4 == reference);
   observable.clear();
   REQUIRE(subscription1.expired());
   REQUIRE(!observable.subscribed(subscription1));
   REQUIRE(subscription2.expired());
   REQUIRE(!observable.subscribed(subscription2));
+  REQUIRE(observable.empty());
   REQUIRE(0 == observable.size());
-  observable.publish(true, 1);
+  observable.publish(true, "1");
   REQUIRE(4 == reference);
 }

@@ -71,5 +71,5 @@ message("***                          flib version: ${FLib_FIND_VERSION}")
 include_directories("${FLib_INCLUDE_DIRS}"
                     "${Catch_INCLUDE_DIRS}")
                     
-add_subdirectory("${CMAKE_SOURCE_DIR}/test_plugin")
+add_subdirectory("${CMAKE_SOURCE_DIR}/test_dll")
 add_subdirectory("${CMAKE_SOURCE_DIR}/tests")

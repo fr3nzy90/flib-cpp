@@ -17,43 +17,15 @@
 * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <algorithm>
-#include <atomic>
 #include <chrono>
-#include <future>
+#include <exception>
 #include <string>
 #include <thread>
-#include <tuple>
-#include <type_traits>
 
 #include <catch2/catch.hpp>
 
 namespace testing
 {
-  const std::string module_path(
-#if defined(_WIN32)
-    "./test_plugin"
-#elif defined(__linux__)
-    "./test_plugin.so"
-#endif
-  );
-
-  template<class T>
-  using remove_reference_t = typename std::remove_reference<T>::type;
-
-  template<class T>
-  inline bool reverse_compare(const T* obj1, const T* obj2, const std::size_t size = sizeof(T))
-  {
-    for (std::size_t i = 0; i < size; ++i)
-    {
-      if (reinterpret_cast<const uint8_t*>(obj1)[i] != reinterpret_cast<const uint8_t*>(obj2)[size - i - 1])
-      {
-        return false;
-      }
-    }
-    return true;
-  }
-
   template<class T>
   inline void sleep_for(const T& duration)
   {

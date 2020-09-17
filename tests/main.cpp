@@ -28,7 +28,7 @@
 #include <catch2/catch.hpp>
 
 // safeguard against redefinition link issue in case of multiple header inclusion within single compilation unit
-#include "flib/flib.hpp"
+#include <flib/flib.hpp>
 
 int main(int argc, char* argv[]) {
 #if defined(_DEBUG) & defined(_MSC_VER)

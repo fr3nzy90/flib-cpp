@@ -19,11 +19,11 @@
 
 #pragma once
 
-#include "flib/binary.hpp"
-#include "flib/dll.hpp"
-#include "flib/observable.hpp"
-#include "flib/sync_guard.hpp"
-#include "flib/sync_queue.hpp"
-#include "flib/timer.hpp"
-#include "flib/version.hpp"
-#include "flib/worker.hpp"
+#include <flib/atomic.hpp>
+#include <flib/binary.hpp>
+#include <flib/dll.hpp>
+#include <flib/observable.hpp>
+#include <flib/pimpl.hpp>
+#include <flib/timer.hpp>
+#include <flib/version.hpp>
+#include <flib/worker.hpp>
