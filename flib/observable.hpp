@@ -36,7 +36,8 @@ namespace flib
   public:
     using observer_t = std::function<void(Args...)>;
     using size_t = std::size_t;
-    using subscription_t = std::weak_ptr<void>;
+
+    class subscription_t;
 
     observable(void) = default;
     observable(const observable&) = delete;
@@ -46,15 +47,34 @@ namespace flib
     observable& operator=(observable&&) = default;
     inline void clear(void);
     inline bool empty(void) const;
+    inline bool owner(const subscription_t& subscription) const;
     inline void publish(Args... args) const;
     inline size_t size(void) const;
     inline subscription_t subscribe(observer_t observer);
-    inline bool subscribed(const subscription_t& subscription) const;
     inline void unsubscribe(const subscription_t& subscription);
 
   private:
     class _impl;
     pimpl<_impl> m_impl;
+  };
+
+  template<class ...Args>
+  class observable<Args...>::subscription_t
+  {
+  public:
+    inline subscription_t(void);
+    inline bool expired(void) const;
+    inline void unsubscribe(void); // It is only safe to invoke method if the owner is not being destructed.
+
+  private:
+    friend observable<Args...>;
+
+    using token_t = std::weak_ptr<void>;
+
+    inline subscription_t(observable<Args...>& owner, token_t token);
+
+    observable<Args...>* m_owner;
+    token_t m_token;
   };
 
   // IMPLEMENTATION
@@ -63,13 +83,15 @@ namespace flib
   class observable<Args...>::_impl
   {
   public:
+    using token_t = typename subscription_t::token_t;
+
     inline void _clear(void);
     inline bool _empty(void) const;
+    inline bool _owner(const token_t& subscription) const;
     inline void _publish(Args... args) const;
     inline size_t _size(void) const;
-    inline subscription_t _subscribe(observer_t observer);
-    inline bool _subscribed(const subscription_t& subscription) const;
-    inline void _unsubscribe(const subscription_t& subscription);
+    inline token_t _subscribe(observer_t observer);
+    inline void _unsubscribe(const token_t& subscription);
 
   private:
     std::set<std::shared_ptr<observer_t>> m_subscriptions;
@@ -88,6 +110,13 @@ namespace flib
   {
     std::lock_guard<std::mutex> subscriptions_guard(m_subscriptions_mtx);
     return m_subscriptions.empty();
+  }
+
+  template<class ...Args>
+  bool observable<Args...>::_impl::_owner(const token_t& token) const
+  {
+    std::lock_guard<std::mutex> subscriptions_guard(m_subscriptions_mtx);
+    return m_subscriptions.cend() != m_subscriptions.find(std::static_pointer_cast<observer_t>(token.lock()));
   }
 
   template<class ...Args>
@@ -110,7 +139,7 @@ namespace flib
   }
 
   template<class ...Args>
-  typename observable<Args...>::subscription_t observable<Args...>::_impl::_subscribe(observer_t observer)
+  typename observable<Args...>::_impl::token_t observable<Args...>::_impl::_subscribe(observer_t observer)
   {
     if (!observer)
     {
@@ -122,17 +151,39 @@ namespace flib
   }
 
   template<class ...Args>
-  bool observable<Args...>::_impl::_subscribed(const subscription_t& subscription) const
+  void observable<Args...>::_impl::_unsubscribe(const token_t& token)
   {
     std::lock_guard<std::mutex> subscriptions_guard(m_subscriptions_mtx);
-    return m_subscriptions.cend() != m_subscriptions.find(std::static_pointer_cast<observer_t>(subscription.lock()));
+    m_subscriptions.erase(std::static_pointer_cast<observer_t>(token.lock()));
   }
 
   template<class ...Args>
-  void observable<Args...>::_impl::_unsubscribe(const subscription_t& subscription)
+  observable<Args...>::subscription_t::subscription_t(void)
+    : m_owner(nullptr)
   {
-    std::lock_guard<std::mutex> subscriptions_guard(m_subscriptions_mtx);
-    m_subscriptions.erase(std::static_pointer_cast<observer_t>(subscription.lock()));
+  }
+
+  template<class ...Args>
+  bool observable<Args...>::subscription_t::expired(void) const
+  {
+    return m_token.expired();
+  }
+
+  template<class ...Args>
+  void observable<Args...>::subscription_t::unsubscribe(void)
+  {
+    if (m_token.expired() || !m_owner)
+    {
+      return;
+    }
+    m_owner->unsubscribe(*this);
+  }
+
+  template<class ...Args>
+  observable<Args...>::subscription_t::subscription_t(observable<Args...>& owner, token_t token)
+    : m_owner(&owner),
+    m_token(token)
+  {
   }
 
   template<class ...Args>
@@ -148,6 +199,12 @@ namespace flib
   }
 
   template<class ...Args>
+  bool observable<Args...>::owner(const subscription_t& subscription) const
+  {
+    return m_impl->_owner(subscription.m_token);
+  }
+
+  template<class ...Args>
   void observable<Args...>::publish(Args... args) const
   {
     m_impl->_publish(std::forward<Args>(args)...);
@@ -160,20 +217,14 @@ namespace flib
   }
 
   template<class ...Args>
-  typename observable<Args...>::subscription_t  observable<Args...>::subscribe(observer_t observer)
+  typename observable<Args...>::subscription_t observable<Args...>::subscribe(observer_t observer)
   {
-    return m_impl->_subscribe(std::move(observer));
-  }
-
-  template<class ...Args>
-  bool observable<Args...>::subscribed(const subscription_t& subscription) const
-  {
-    return m_impl->_subscribed(subscription);
+    return { *this, m_impl->_subscribe(std::move(observer)) };
   }
 
   template<class ...Args>
   void observable<Args...>::unsubscribe(const subscription_t& subscription)
   {
-    m_impl->_unsubscribe(subscription);
+    m_impl->_unsubscribe(subscription.m_token);
   }
 }

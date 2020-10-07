@@ -18,7 +18,6 @@
 */
 
 #include <future>
-#include <memory>
 #include <tuple>
 
 #include <flib/atomic.hpp>

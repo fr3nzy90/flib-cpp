@@ -41,7 +41,10 @@ namespace flib
     explicit inline atomic(T desired);
     atomic(const atomic&) = delete;
     atomic(atomic&&) = default;
-    ~atomic(void) noexcept = default;
+    ~atomic(void) noexcept = default; // It is only safe to invoke the destructor if all threads have been notified. 
+                                      // It is not required that they have exited their respective wait functions: some
+                                      // threads may still be waiting to reacquire the associated lock, or may be
+                                      // waiting to be scheduled to run after reacquiring it.
     inline T operator=(T desired);
     atomic& operator=(const atomic&) = delete;
     atomic& operator=(atomic&&) = default;

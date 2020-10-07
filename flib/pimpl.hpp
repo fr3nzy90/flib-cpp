@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <memory>
 #include <utility>
 
 namespace flib
@@ -32,7 +31,7 @@ namespace flib
     inline pimpl(Args&& ...args);
     pimpl(const pimpl&) = delete;
     pimpl(pimpl&&) = default;
-    ~pimpl(void) = default;
+    ~pimpl(void);
     pimpl& operator=(const pimpl&) = delete;
     pimpl& operator=(pimpl&&) = default;
     inline T* operator->(void);
@@ -43,7 +42,7 @@ namespace flib
     inline const T* get(void) const;
 
   private:
-    std::unique_ptr<T> m_impl;
+    T* m_impl;
   };
 
   // IMPLEMENTATION
@@ -53,6 +52,12 @@ namespace flib
   pimpl<T>::pimpl(Args&& ...args)
     : m_impl{ new T{ std::forward<Args>(args)... } }
   {
+  }
+
+  template<class T>
+  pimpl<T>::~pimpl(void)
+  {
+    delete m_impl;
   }
 
   template<class T>
@@ -82,12 +87,12 @@ namespace flib
   template<class T>
   T* pimpl<T>::get(void)
   {
-    return m_impl.get();
+    return m_impl;
   }
 
   template<class T>
   const T* pimpl<T>::get(void) const
   {
-    return m_impl.get();
+    return m_impl;
   }
 }

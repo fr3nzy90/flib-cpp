@@ -39,10 +39,11 @@ namespace flib
   class worker
   {
   public:
-    using invocation_t = std::weak_ptr<void>;
     using priority_t = uint8_t;
     using size_t = std::size_t;
     using task_t = std::function<void(void)>;
+
+    class invocation_t;
 
     explicit inline worker(bool enabled = true, size_t executors = 1);
     worker(const worker&) = delete;
@@ -58,7 +59,7 @@ namespace flib
     inline bool enabled(void) const;
     inline size_t executors(void) const;
     inline invocation_t invoke(task_t task, priority_t priority = 0);
-    inline bool invoked(const invocation_t& invocation) const;
+    inline bool owner(const invocation_t& invocation) const;
     inline size_t size(void) const;
 
   private:
@@ -66,11 +67,31 @@ namespace flib
     pimpl<_impl> m_impl;
   };
 
+  class worker::invocation_t
+  {
+  public:
+    inline invocation_t(void);
+    inline void cancel(void); // It is only safe to invoke method if the owner is not being destructed.
+    inline bool expired(void) const;
+
+  private:
+    friend worker;
+
+    using token_t = std::weak_ptr<void>;
+
+    inline invocation_t(worker& owner, token_t token);
+
+    worker* m_owner;
+    token_t m_token;
+  };
+
   // IMPLEMENTATION
 
   class worker::_impl
   {
   public:
+    using token_t = invocation_t::token_t;
+
     struct _invocation_t
     {
       task_t task;
@@ -79,15 +100,15 @@ namespace flib
 
     inline _impl(bool enabled, size_t executors);
     inline ~_impl(void) noexcept;
-    inline void _cancel(const invocation_t& invocation);
+    inline void _cancel(const token_t& token);
     inline void _clear(void);
     inline void _disable(void);
     inline bool _empty(void) const;
     inline void _enable(void);
     inline bool _enabled(void) const;
     inline size_t _executors(void) const;
-    inline invocation_t _invoke(_invocation_t invocation);
-    inline bool _invoked(const invocation_t& invocation) const;
+    inline token_t _invoke(_invocation_t invocation);
+    inline bool _owner(const token_t& token) const;
     inline size_t _size(void) const;
 
   private:
@@ -142,10 +163,10 @@ namespace flib
     }
   }
 
-  void worker::_impl::_cancel(const invocation_t& invocation)
+  void worker::_impl::_cancel(const token_t& token)
   {
     std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-    m_invocations.remove(std::static_pointer_cast<_invocation_t>(invocation.lock()));
+    m_invocations.remove(std::static_pointer_cast<_invocation_t>(token.lock()));
   }
 
   void worker::_impl::_clear(void)
@@ -193,14 +214,14 @@ namespace flib
     return static_cast<size_t>(m_executors.size());
   }
 
-  worker::invocation_t worker::_impl::_invoke(_invocation_t invocation)
+  worker::_impl::token_t worker::_impl::_invoke(_invocation_t invocation)
   {
     if (!invocation.task)
     {
       return {};
     }
     auto invocation_ptr = std::make_shared<_invocation_t>(std::move(invocation));
-    worker::invocation_t result = invocation_ptr;
+    worker::_impl::token_t token = invocation_ptr;
     {
       std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
       m_invocations.emplace(0 == invocation_ptr->priority ?
@@ -213,14 +234,14 @@ namespace flib
         std::move(invocation_ptr));
     }
     m_condition.notify_one();
-    return result;
+    return token;
   }
 
-  bool worker::_impl::_invoked(const invocation_t& invocation) const
+  bool worker::_impl::_owner(const token_t& token) const
   {
     std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
     return m_invocations.cend() != std::find(m_invocations.cbegin(), m_invocations.cend(),
-      std::static_pointer_cast<_invocation_t>(invocation.lock()));
+      std::static_pointer_cast<_invocation_t>(token.lock()));
   }
 
   worker::size_t worker::_impl::_size(void) const
@@ -278,6 +299,31 @@ namespace flib
     }
   }
 
+  worker::invocation_t::invocation_t(void)
+    : m_owner(nullptr)
+  {
+  }
+
+  void worker::invocation_t::cancel(void)
+  {
+    if (m_token.expired() || !m_owner)
+    {
+      return;
+    }
+    m_owner->cancel(*this);
+  }
+
+  bool worker::invocation_t::expired(void) const
+  {
+    return m_token.expired();
+  }
+
+  worker::invocation_t::invocation_t(worker& owner, token_t token)
+    : m_owner(&owner),
+    m_token(token)
+  {
+  }
+
   worker::worker(bool enabled, size_t executors)
     : m_impl(enabled, executors)
   {
@@ -285,7 +331,7 @@ namespace flib
 
   void worker::cancel(const invocation_t& invocation)
   {
-    m_impl->_cancel(invocation);
+    m_impl->_cancel(invocation.m_token);
   }
 
   void worker::clear(void)
@@ -320,12 +366,12 @@ namespace flib
 
   worker::invocation_t worker::invoke(task_t task, priority_t priority)
   {
-    return m_impl->_invoke({ std::move(task), std::move(priority) });
+    return { *this, m_impl->_invoke({ std::move(task), std::move(priority) }) };
   }
 
-  bool worker::invoked(const invocation_t& invocation) const
+  bool worker::owner(const invocation_t& invocation) const
   {
-    return m_impl->_invoked(invocation);
+    return m_impl->_owner(invocation.m_token);
   }
 
   worker::size_t worker::size(void) const

@@ -18,8 +18,8 @@
 set(project_name "tests")
 project(${project_name} DESCRIPTION "fr3nzy's library tests")
 
-source_group("/Header Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/[^/]*.hpp")
-source_group("/Source Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/[^/]*.cpp")
+source_group("/Header Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp")
+source_group("/Source Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
 file(GLOB src_files
   "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp"
