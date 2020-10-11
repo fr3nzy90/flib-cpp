@@ -23,7 +23,7 @@
 #define FLIB_VERSION_MAJOR 0
 
 // Library minor version - max 999
-#define FLIB_VERSION_MINOR 3
+#define FLIB_VERSION_MINOR 4
 
 // Library patch version - max 99
 #define FLIB_VERSION_PATCH 0
