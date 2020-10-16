@@ -71,8 +71,7 @@ namespace flib
   class atomic<T>::_impl
   {
   public:
-    _impl(void) = default;
-    inline _impl(T desired);
+    inline _impl(T desired = {});
     inline T _exchange(T desired);
     inline T _load(void) const;
     inline void _notify_all(void);

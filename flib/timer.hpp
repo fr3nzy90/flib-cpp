@@ -64,19 +64,11 @@ namespace flib
   class timer::_impl
   {
   public:
-    struct _configuration_t
-    {
-      event_t event;
-      duration_t delay;
-      duration_t period;
-      type_t type;
-    };
-
     inline _impl(void);
     inline ~_impl(void) noexcept;
     inline void _clear(void);
     inline void _reschedule(void);
-    inline void _schedule(_configuration_t configuration);
+    inline void _schedule(event_t event, duration_t delay, duration_t period, type_t type);
     inline bool _scheduled(void) const;
 
   private:
@@ -91,7 +83,7 @@ namespace flib
 
     struct __executor_t
     {
-      bool running;
+      bool running = false;
       std::future<void> result;
     };
 
@@ -100,7 +92,10 @@ namespace flib
     inline void __wait(__executor_t& executor);
     inline void __run(__executor_t& executor);
 
-    _configuration_t m_configuration;
+    event_t m_event;
+    duration_t m_delay;
+    duration_t m_period;
+    type_t m_type;
     __state_t m_state;
     __clock_t::time_point m_event_time;
     __executor_t m_executor;
@@ -109,9 +104,10 @@ namespace flib
   };
 
   timer::_impl::_impl(void)
-    : m_configuration{ {},{},{}, type_t::fixed_delay },
-    m_state{ __state_t::destruct },
-    m_executor{ false, {} }
+    : m_delay{},
+    m_period{},
+    m_type{ type_t::fixed_delay },
+    m_state{ __state_t::destruct }
   {
   }
 
@@ -134,27 +130,30 @@ namespace flib
   {
     {
       std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-      if (!m_configuration.event)
+      if (!m_event)
       {
         return;
       }
-      m_event_time = __clock_t::now() + m_configuration.delay;
+      m_event_time = __clock_t::now() + m_delay;
       m_state = __state_t::activating;
       __init(m_executor);
     }
     m_condition.notify_all();
   }
 
-  void timer::_impl::_schedule(_configuration_t configuration)
+  void timer::_impl::_schedule(event_t event, duration_t delay, duration_t period, type_t type)
   {
-    if (!configuration.event)
+    if (!event)
     {
       return;
     }
     {
       std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-      m_configuration = std::move(configuration);
-      m_event_time = __clock_t::now() + m_configuration.delay;
+      m_event = std::move(event);
+      m_delay = std::move(delay);
+      m_period = std::move(period);
+      m_type = std::move(type);
+      m_event_time = __clock_t::now() + m_delay;
       m_state = __state_t::activating;
       __init(m_executor);
     }
@@ -193,37 +192,38 @@ namespace flib
   {
     try
     {
-      _configuration_t configuration;
+      event_t event;
+      __clock_t::time_point event_time;
       std::unique_lock<std::mutex> condition_guard(m_condition_mtx, std::defer_lock);
       auto scheduled_execution = [&]
       {
-        if (m_condition.wait_until(condition_guard, m_event_time, std::bind(&_impl::__condition_check, this)))
+        if (m_condition.wait_until(condition_guard, event_time, std::bind(&_impl::__condition_check, this)))
         {
           return false;
         }
         condition_guard.unlock();
-        configuration.event();
+        event();
         condition_guard.lock();
         return !__condition_check();
       };
       condition_guard.lock();
       while (__state_t::destruct != m_state)
       {
-        configuration = m_configuration;
+        event = m_event;
+        event_time = m_event_time;
         m_state = __state_t::active;
         if (!scheduled_execution())
         {
           continue;
         }
-        if (duration_t{} == configuration.period)
+        if (duration_t{} == m_period)
         {
           m_state = __state_t::destruct;
           break;
         }
         do
         {
-          m_event_time = (type_t::fixed_delay == configuration.type ? __clock_t::now() : m_event_time) +
-            configuration.period;
+          event_time = (type_t::fixed_delay == m_type ? __clock_t::now() : event_time) + m_period;
         } while (scheduled_execution());
       }
       executor.running = false;
@@ -246,7 +246,7 @@ namespace flib
 
   void timer::schedule(event_t event, duration_t delay, duration_t period, type_t type)
   {
-    m_impl->_schedule({ std::move(event), std::move(delay), std::move(period), std::move(type) });
+    m_impl->_schedule(std::move(event), std::move(delay), std::move(period), std::move(type));
   }
 
   bool timer::scheduled(void) const

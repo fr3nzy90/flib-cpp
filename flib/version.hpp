@@ -26,7 +26,7 @@
 #define FLIB_VERSION_MINOR 4
 
 // Library patch version - max 99
-#define FLIB_VERSION_PATCH 0
+#define FLIB_VERSION_PATCH 1
 
 // Library version represented with a single number
 //

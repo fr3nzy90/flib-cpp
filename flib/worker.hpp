@@ -120,7 +120,7 @@ namespace flib
 
     struct __executor_t
     {
-      bool running;
+      bool running = false;
       std::future<void> result;
     };
 
@@ -143,10 +143,6 @@ namespace flib
     if (0 == executors)
     {
       throw std::logic_error("Executorless worker not allowed");
-    }
-    for (auto& executor : m_executors)
-    {
-      executor.running = false;
     }
     if (enabled)
     {
