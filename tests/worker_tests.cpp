@@ -227,7 +227,7 @@ TEST_CASE("Worker tests - Cancellation", "[worker]")
   {
     flib::worker worker;
     std::atomic<uint32_t> reference(0);
-    flib::worker::invocation_t invocation1, invocation2;
+    flib::worker_invocation invocation1, invocation2;
     auto task = [&reference, &worker, &invocation1, &invocation2]
     {
       ++reference;
@@ -292,7 +292,7 @@ TEST_CASE("Worker tests - Clearing", "[worker]")
   {
     flib::worker worker;
     std::atomic<uint32_t> reference(0);
-    flib::worker::invocation_t invocation1, invocation2;
+    flib::worker_invocation invocation1, invocation2;
     auto task = [&reference, &worker, &invocation1, &invocation2]
     {
       ++reference;

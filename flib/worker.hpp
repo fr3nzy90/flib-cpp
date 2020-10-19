@@ -36,6 +36,26 @@
 
 namespace flib
 {
+  class worker;
+
+  class worker_invocation
+  {
+  public:
+    worker_invocation(void);
+    void cancel(void);
+    bool expired(void) const;
+
+  private:
+    friend worker;
+
+    using token_t = std::weak_ptr<void>;
+
+    worker_invocation(worker& owner, token_t token);
+
+    worker* m_owner;
+    token_t m_token;
+  };
+
   class worker
   {
   public:
@@ -43,264 +63,50 @@ namespace flib
     using size_t = std::size_t;
     using task_t = std::function<void(void)>;
 
-    class invocation_t;
-
-    explicit inline worker(bool enabled = true, size_t executors = 1);
+    explicit worker(bool enabled = true, size_t executors = 1);
     worker(const worker&) = delete;
     worker(worker&&) = default;
-    ~worker(void) noexcept = default;
+    ~worker(void) noexcept;
     worker& operator=(const worker&) = delete;
     worker& operator=(worker&&) = default;
-    inline void cancel(const invocation_t& invocation);
-    inline void clear(void);
-    inline void disable(void);
-    inline bool empty(void) const;
-    inline void enable(void);
-    inline bool enabled(void) const;
-    inline size_t executors(void) const;
-    inline invocation_t invoke(task_t task, priority_t priority = 0);
-    inline bool owner(const invocation_t& invocation) const;
-    inline size_t size(void) const;
+    void cancel(const worker_invocation& invocation);
+    void clear(void);
+    void disable(void);
+    bool empty(void) const;
+    void enable(void);
+    bool enabled(void) const;
+    size_t executors(void) const;
+    worker_invocation invoke(task_t task, priority_t priority = 0);
+    bool owner(const worker_invocation& invocation) const;
+    size_t size(void) const;
 
   private:
-    class _impl;
-    pimpl<_impl> m_impl;
-  };
-
-  class worker::invocation_t
-  {
-  public:
-    inline invocation_t(void);
-    inline void cancel(void); // It is only safe to invoke method if the owner is not being destructed.
-    inline bool expired(void) const;
-
-  private:
-    friend worker;
-
-    using token_t = std::weak_ptr<void>;
-
-    inline invocation_t(worker& owner, token_t token);
-
-    worker* m_owner;
-    token_t m_token;
-  };
-
-  // IMPLEMENTATION
-
-  class worker::_impl
-  {
-  public:
-    using token_t = invocation_t::token_t;
-
-    struct _invocation_t
-    {
-      task_t task;
-      priority_t priority;
-    };
-
-    inline _impl(bool enabled, size_t executors);
-    inline ~_impl(void) noexcept;
-    inline void _cancel(const token_t& token);
-    inline void _clear(void);
-    inline void _disable(void);
-    inline bool _empty(void) const;
-    inline void _enable(void);
-    inline bool _enabled(void) const;
-    inline size_t _executors(void) const;
-    inline token_t _invoke(_invocation_t invocation);
-    inline bool _owner(const token_t& token) const;
-    inline size_t _size(void) const;
-
-  private:
-    enum class __state_t
+    enum class _state_t
     {
       active,
       destruct
     };
 
-    struct __executor_t
-    {
-      bool running = false;
-      std::future<void> result;
-    };
+    struct _executor;
+    struct _invocation;
+    struct _storage;
 
-    inline bool __condition_check(void) const;
-    inline void __init(__executor_t& executor);
-    inline void __wait(__executor_t& executor);
-    inline void __run(__executor_t& executor);
+    bool _condition_check(void) const;
+    void _init(_executor& executor);
+    void _wait(_executor& executor);
+    void _run(_executor& executor);
 
-    __state_t m_state;
-    std::list<std::shared_ptr<_invocation_t>> m_invocations;
-    std::list<__executor_t> m_executors;
-    std::condition_variable m_condition;
-    mutable std::mutex m_condition_mtx;
+    pimpl<_storage> m_storage;
   };
 
-  worker::_impl::_impl(bool enabled, size_t executors)
-    : m_state{ __state_t::destruct },
-    m_executors(executors)
-  {
-    if (0 == executors)
-    {
-      throw std::logic_error("Executorless worker not allowed");
-    }
-    if (enabled)
-    {
-      _enable();
-    }
-  }
+  // IMPLEMENTATION
 
-  worker::_impl::~_impl(void) noexcept
-  {
-    _disable();
-    for (auto& executor : m_executors)
-    {
-      __wait(executor);
-    }
-  }
-
-  void worker::_impl::_cancel(const token_t& token)
-  {
-    std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-    m_invocations.remove(std::static_pointer_cast<_invocation_t>(token.lock()));
-  }
-
-  void worker::_impl::_clear(void)
-  {
-    std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-    m_invocations.clear();
-  }
-
-  void worker::_impl::_disable(void)
-  {
-    {
-      std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-      m_state = __state_t::destruct;
-    }
-    m_condition.notify_all();
-  }
-
-  bool worker::_impl::_empty(void) const
-  {
-    std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-    return m_invocations.empty();
-  }
-
-  void worker::_impl::_enable(void)
-  {
-    {
-      std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-      m_state = __state_t::active;
-      for (auto& executor : m_executors)
-      {
-        __init(executor);
-      }
-    }
-    m_condition.notify_all();
-  }
-
-  bool worker::_impl::_enabled(void) const
-  {
-    std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-    return __state_t::active == m_state;
-  }
-
-  worker::size_t worker::_impl::_executors(void) const
-  {
-    return static_cast<size_t>(m_executors.size());
-  }
-
-  worker::_impl::token_t worker::_impl::_invoke(_invocation_t invocation)
-  {
-    if (!invocation.task)
-    {
-      return {};
-    }
-    auto invocation_ptr = std::make_shared<_invocation_t>(std::move(invocation));
-    worker::_impl::token_t token = invocation_ptr;
-    {
-      std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-      m_invocations.emplace(0 == invocation_ptr->priority ?
-        m_invocations.cend() :
-        std::upper_bound(m_invocations.cbegin(), m_invocations.cend(), invocation_ptr->priority,
-          [](priority_t priority, const std::shared_ptr<_invocation_t>& invocation_el)
-          {
-            return priority > invocation_el->priority;
-          }),
-        std::move(invocation_ptr));
-    }
-    m_condition.notify_one();
-    return token;
-  }
-
-  bool worker::_impl::_owner(const token_t& token) const
-  {
-    std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-    return m_invocations.cend() != std::find(m_invocations.cbegin(), m_invocations.cend(),
-      std::static_pointer_cast<_invocation_t>(token.lock()));
-  }
-
-  worker::size_t worker::_impl::_size(void) const
-  {
-    std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-    return static_cast<size_t>(m_invocations.size());
-  }
-
-  bool worker::_impl::__condition_check(void) const
-  {
-    return __state_t::active != m_state || !m_invocations.empty();
-  }
-
-  void worker::_impl::__init(__executor_t& executor)
-  {
-    if (!executor.running)
-    {
-      executor.running = true;
-      executor.result = std::async(std::launch::async, &_impl::__run, this, std::ref(executor));
-    }
-  }
-
-  void worker::_impl::__wait(__executor_t& executor)
-  {
-    if (executor.result.valid())
-    {
-      executor.result.get();
-    }
-  }
-
-  void worker::_impl::__run(__executor_t& executor)
-  {
-    try
-    {
-      task_t task;
-      std::unique_lock<std::mutex> condition_guard(m_condition_mtx);
-      while (__state_t::destruct != m_state)
-      {
-        if (!m_invocations.empty())
-        {
-          task = std::move(m_invocations.front()->task);
-          m_invocations.pop_front();
-          condition_guard.unlock();
-          task();
-          condition_guard.lock();
-          continue;
-        }
-        m_condition.wait(condition_guard, std::bind(&_impl::__condition_check, this));
-      }
-      executor.running = false;
-    }
-    catch (...)
-    {
-      std::terminate();
-    }
-  }
-
-  worker::invocation_t::invocation_t(void)
+  inline  worker_invocation::worker_invocation(void)
     : m_owner(nullptr)
   {
   }
 
-  void worker::invocation_t::cancel(void)
+  inline void worker_invocation::cancel(void)
   {
     if (m_token.expired() || !m_owner)
     {
@@ -309,69 +115,191 @@ namespace flib
     m_owner->cancel(*this);
   }
 
-  bool worker::invocation_t::expired(void) const
+  inline bool worker_invocation::expired(void) const
   {
     return m_token.expired();
   }
 
-  worker::invocation_t::invocation_t(worker& owner, token_t token)
+  inline worker_invocation::worker_invocation(worker& owner, token_t token)
     : m_owner(&owner),
     m_token(token)
   {
   }
 
-  worker::worker(bool enabled, size_t executors)
-    : m_impl(enabled, executors)
+  struct worker::_executor
   {
+    bool running{ false };
+    std::future<void> result;
+  };
+
+  struct worker::_invocation
+  {
+    task_t task;
+    priority_t priority;
+  };
+
+  struct worker::_storage
+  {
+    _state_t state = _state_t::destruct;
+    std::list<std::shared_ptr<_invocation>> invocations;
+    std::list<_executor> executors;
+    std::condition_variable condition;
+    mutable std::mutex condition_mtx;
+  };
+
+  inline worker::worker(bool enabled, size_t executors)
+  {
+    if (0 == executors)
+    {
+      throw std::logic_error("Executorless worker not allowed");
+    }
+    m_storage->executors.resize(executors);
+    if (enabled)
+    {
+      enable();
+    }
   }
 
-  void worker::cancel(const invocation_t& invocation)
+  inline worker::~worker(void) noexcept
   {
-    m_impl->_cancel(invocation.m_token);
+    disable();
+    for (auto& executor : m_storage->executors)
+    {
+      _wait(executor);
+    }
+    clear();
   }
 
-  void worker::clear(void)
+  inline void worker::cancel(const worker_invocation& invocation)
   {
-    m_impl->_clear();
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    m_storage->invocations.remove(std::static_pointer_cast<_invocation>(invocation.m_token.lock()));
   }
 
-  void worker::disable(void)
+  inline void worker::clear(void)
   {
-    m_impl->_disable();
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    m_storage->invocations.clear();
   }
 
-  bool worker::empty(void) const
+  inline void worker::disable(void)
   {
-    return m_impl->_empty();
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    m_storage->state = _state_t::destruct;
+    condition_guard.unlock();
+    m_storage->condition.notify_all();
   }
 
-  void worker::enable(void)
+  inline bool worker::empty(void) const
   {
-    m_impl->_enable();
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    return m_storage->invocations.empty();
   }
 
-  bool worker::enabled(void) const
+  inline void worker::enable(void)
   {
-    return m_impl->_enabled();
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    m_storage->state = _state_t::active;
+    for (auto& executor : m_storage->executors)
+    {
+      _init(executor);
+    }
+    condition_guard.unlock();
+    m_storage->condition.notify_all();
   }
 
-  worker::size_t worker::executors(void) const
+  inline bool worker::enabled(void) const
   {
-    return m_impl->_executors();
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    return _state_t::active == m_storage->state;
   }
 
-  worker::invocation_t worker::invoke(task_t task, priority_t priority)
+  inline worker::size_t worker::executors(void) const
   {
-    return { *this, m_impl->_invoke({ std::move(task), std::move(priority) }) };
+    return static_cast<size_t>(m_storage->executors.size());
   }
 
-  bool worker::owner(const invocation_t& invocation) const
+  inline worker_invocation worker::invoke(task_t task, priority_t priority)
   {
-    return m_impl->_owner(invocation.m_token);
+    if (!task)
+    {
+      return {};
+    }
+    auto invocation_ptr = std::make_shared<_invocation>(_invocation{ std::move(task), std::move(priority) });
+    worker_invocation::token_t token = invocation_ptr;
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    m_storage->invocations.emplace(0 == invocation_ptr->priority ?
+      m_storage->invocations.cend() :
+      std::upper_bound(m_storage->invocations.cbegin(), m_storage->invocations.cend(), invocation_ptr->priority,
+        [](priority_t priority_ref, const std::shared_ptr<_invocation>& invocation_el)
+        {
+          return priority_ref > invocation_el->priority;
+        }),
+      std::move(invocation_ptr));
+    condition_guard.unlock();
+    m_storage->condition.notify_one();
+    return { *this, token };
   }
 
-  worker::size_t worker::size(void) const
+  inline bool worker::owner(const worker_invocation& invocation) const
   {
-    return m_impl->_size();
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    return m_storage->invocations.cend() != std::find(m_storage->invocations.cbegin(), m_storage->invocations.cend(),
+      std::static_pointer_cast<_invocation>(invocation.m_token.lock()));
+  }
+
+  inline worker::size_t worker::size(void) const
+  {
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    return static_cast<size_t>(m_storage->invocations.size());
+  }
+
+  inline bool worker::_condition_check(void) const
+  {
+    return _state_t::active != m_storage->state || !m_storage->invocations.empty();
+  }
+
+  inline void worker::_init(_executor& executor)
+  {
+    if (!executor.running)
+    {
+      executor.running = true;
+      executor.result = std::async(std::launch::async, &worker::_run, this, std::ref(executor));
+    }
+  }
+
+  inline void worker::_wait(_executor& executor)
+  {
+    if (executor.result.valid())
+    {
+      executor.result.get();
+    }
+  }
+
+  inline void worker::_run(_executor& executor)
+  {
+    try
+    {
+      task_t task;
+      std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+      while (_state_t::destruct != m_storage->state)
+      {
+        if (!m_storage->invocations.empty())
+        {
+          task = std::move(m_storage->invocations.front()->task);
+          m_storage->invocations.pop_front();
+          condition_guard.unlock();
+          task();
+          condition_guard.lock();
+          continue;
+        }
+        m_storage->condition.wait(condition_guard, std::bind(&worker::_condition_check, this));
+      }
+      executor.running = false;
+    }
+    catch (...)
+    {
+      std::terminate();
+    }
   }
 }

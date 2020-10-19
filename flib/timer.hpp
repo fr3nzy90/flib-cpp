@@ -46,141 +46,123 @@ namespace flib
     timer(void) = default;
     timer(const timer&) = delete;
     timer(timer&&) = default;
-    ~timer(void) noexcept = default;
+    ~timer(void) noexcept;
     timer& operator=(const timer&) = delete;
     timer& operator=(timer&&) = default;
-    inline void clear(void);
-    inline void reschedule(void);
-    inline void schedule(event_t event, duration_t delay, duration_t period = {}, type_t type = type_t::fixed_delay);
-    inline bool scheduled(void) const;
+    void clear(void);
+    void reschedule(void);
+    void schedule(event_t event, duration_t delay, duration_t period = {}, type_t type = type_t::fixed_delay);
+    bool scheduled(void) const;
 
   private:
-    class _impl;
-    pimpl<_impl> m_impl;
-  };
+    using _clock_t = std::chrono::steady_clock;
 
-  // IMPLEMENTATION
-
-  class timer::_impl
-  {
-  public:
-    inline _impl(void);
-    inline ~_impl(void) noexcept;
-    inline void _clear(void);
-    inline void _reschedule(void);
-    inline void _schedule(event_t event, duration_t delay, duration_t period, type_t type);
-    inline bool _scheduled(void) const;
-
-  private:
-    using __clock_t = std::chrono::steady_clock;
-
-    enum class __state_t
+    enum class _state_t
     {
       activating,
       active,
       destruct
     };
 
-    struct __executor_t
-    {
-      bool running = false;
-      std::future<void> result;
-    };
+    struct _executor;
+    struct _storage;
 
-    inline bool __condition_check(void) const;
-    inline void __init(__executor_t& executor);
-    inline void __wait(__executor_t& executor);
-    inline void __run(__executor_t& executor);
+    bool _condition_check(void) const;
+    void _init(_executor& executor);
+    void _wait(_executor& executor);
+    void _run(_executor& executor);
 
-    event_t m_event;
-    duration_t m_delay;
-    duration_t m_period;
-    type_t m_type;
-    __state_t m_state;
-    __clock_t::time_point m_event_time;
-    __executor_t m_executor;
-    std::condition_variable m_condition;
-    mutable std::mutex m_condition_mtx;
+    pimpl<_storage> m_storage;
   };
 
-  timer::_impl::_impl(void)
-    : m_delay{},
-    m_period{},
-    m_type{ type_t::fixed_delay },
-    m_state{ __state_t::destruct }
+  // IMPLEMENTATION
+
+  struct timer::_executor
   {
+    bool running = false;
+    std::future<void> result;
+  };
+
+  struct timer::_storage
+  {
+    event_t event;
+    duration_t delay{};
+    duration_t period{};
+    type_t type = type_t::fixed_delay;
+    _state_t state = _state_t::destruct;
+    _clock_t::time_point event_time;
+    _executor executor;
+    std::condition_variable condition;
+    mutable std::mutex condition_mtx;
+  };
+
+  inline timer::~timer(void) noexcept
+  {
+    clear();
+    _wait(m_storage->executor);
   }
 
-  timer::_impl::~_impl(void) noexcept
+  inline void timer::clear(void)
   {
-    _clear();
-    __wait(m_executor);
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    m_storage->state = _state_t::destruct;
+    condition_guard.unlock();
+    m_storage->condition.notify_all();
   }
 
-  void timer::_impl::_clear(void)
+  inline void timer::reschedule(void)
   {
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    if (!m_storage->event)
     {
-      std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-      m_state = __state_t::destruct;
+      return;
     }
-    m_condition.notify_all();
+    m_storage->event_time = _clock_t::now() + m_storage->delay;
+    m_storage->state = _state_t::activating;
+    _init(m_storage->executor);
+    condition_guard.unlock();
+    m_storage->condition.notify_all();
   }
 
-  void timer::_impl::_reschedule(void)
-  {
-    {
-      std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-      if (!m_event)
-      {
-        return;
-      }
-      m_event_time = __clock_t::now() + m_delay;
-      m_state = __state_t::activating;
-      __init(m_executor);
-    }
-    m_condition.notify_all();
-  }
-
-  void timer::_impl::_schedule(event_t event, duration_t delay, duration_t period, type_t type)
+  inline void timer::schedule(event_t event, duration_t delay, duration_t period, type_t type)
   {
     if (!event)
     {
       return;
     }
-    {
-      std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-      m_event = std::move(event);
-      m_delay = std::move(delay);
-      m_period = std::move(period);
-      m_type = std::move(type);
-      m_event_time = __clock_t::now() + m_delay;
-      m_state = __state_t::activating;
-      __init(m_executor);
-    }
-    m_condition.notify_all();
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    m_storage->event = std::move(event);
+    m_storage->delay = std::move(delay);
+    m_storage->period = std::move(period);
+    m_storage->type = std::move(type);
+    m_storage->event_time = _clock_t::now() + m_storage->delay;
+    m_storage->state = _state_t::activating;
+    _init(m_storage->executor);
+    condition_guard.unlock();
+    m_storage->condition.notify_all();
   }
 
-  bool timer::_impl::_scheduled(void) const
+  inline bool timer::scheduled(void) const
   {
-    std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-    return __state_t::active == m_state || __state_t::activating == m_state;
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    return _state_t::active == m_storage->state || _state_t::activating == m_storage->state;
   }
 
-  bool timer::_impl::__condition_check(void) const
+  inline bool timer::_condition_check(void) const
   {
-    return __state_t::active != m_state;
+    return _state_t::active != m_storage->state;
   }
 
-  void timer::_impl::__init(__executor_t& executor)
+  inline void timer::_init(_executor& executor)
   {
     if (!executor.running)
     {
       executor.running = true;
-      executor.result = std::async(std::launch::async, &_impl::__run, this, std::ref(executor));
+      executor.result = std::async(std::launch::async, &timer::_run, this, std::ref(executor));
     }
   }
 
-  void timer::_impl::__wait(__executor_t& executor)
+  inline void timer::_wait(_executor& executor)
   {
     if (executor.result.valid())
     {
@@ -188,42 +170,42 @@ namespace flib
     }
   }
 
-  void timer::_impl::__run(__executor_t& executor)
+  inline void timer::_run(_executor& executor)
   {
     try
     {
       event_t event;
-      __clock_t::time_point event_time;
-      std::unique_lock<std::mutex> condition_guard(m_condition_mtx, std::defer_lock);
+      _clock_t::time_point event_time;
+      std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx, std::defer_lock);
       auto scheduled_execution = [&]
       {
-        if (m_condition.wait_until(condition_guard, event_time, std::bind(&_impl::__condition_check, this)))
+        if (m_storage->condition.wait_until(condition_guard, event_time, std::bind(&timer::_condition_check, this)))
         {
           return false;
         }
         condition_guard.unlock();
         event();
         condition_guard.lock();
-        return !__condition_check();
+        return !_condition_check();
       };
       condition_guard.lock();
-      while (__state_t::destruct != m_state)
+      while (_state_t::destruct != m_storage->state)
       {
-        event = m_event;
-        event_time = m_event_time;
-        m_state = __state_t::active;
+        event = m_storage->event;
+        event_time = m_storage->event_time;
+        m_storage->state = _state_t::active;
         if (!scheduled_execution())
         {
           continue;
         }
-        if (duration_t{} == m_period)
+        if (duration_t{} == m_storage->period)
         {
-          m_state = __state_t::destruct;
+          m_storage->state = _state_t::destruct;
           break;
         }
         do
         {
-          event_time = (type_t::fixed_delay == m_type ? __clock_t::now() : event_time) + m_period;
+          event_time = (type_t::fixed_delay == m_storage->type ? _clock_t::now() : event_time) + m_storage->period;
         } while (scheduled_execution());
       }
       executor.running = false;
@@ -232,25 +214,5 @@ namespace flib
     {
       std::terminate();
     }
-  }
-
-  void timer::clear(void)
-  {
-    m_impl->_clear();
-  }
-
-  void timer::reschedule(void)
-  {
-    m_impl->_reschedule();
-  }
-
-  void timer::schedule(event_t event, duration_t delay, duration_t period, type_t type)
-  {
-    m_impl->_schedule(std::move(event), std::move(delay), std::move(period), std::move(type));
-  }
-
-  bool timer::scheduled(void) const
-  {
-    return m_impl->_scheduled();
   }
 }

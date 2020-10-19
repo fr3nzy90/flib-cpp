@@ -28,18 +28,18 @@ namespace flib
   {
   public:
     template<class ...Args>
-    inline pimpl(Args&& ...args);
+    pimpl(Args&& ...args);
     pimpl(const pimpl&) = delete;
     pimpl(pimpl&&) = default;
     ~pimpl(void);
     pimpl& operator=(const pimpl&) = delete;
     pimpl& operator=(pimpl&&) = default;
-    inline T* operator->(void);
-    inline const T* operator->(void) const;
-    inline T& operator*(void);
-    inline const T& operator*(void) const;
-    inline T* get(void);
-    inline const T* get(void) const;
+    T* operator->(void);
+    const T* operator->(void) const;
+    T& operator*(void);
+    const T& operator*(void) const;
+    T* get(void);
+    const T* get(void) const;
 
   private:
     T* m_impl;
@@ -49,49 +49,49 @@ namespace flib
 
   template<class T>
   template<class ...Args>
-  pimpl<T>::pimpl(Args&& ...args)
+  inline pimpl<T>::pimpl(Args&& ...args)
     : m_impl{ new T{ std::forward<Args>(args)... } }
   {
   }
 
   template<class T>
-  pimpl<T>::~pimpl(void)
+  inline pimpl<T>::~pimpl(void)
   {
     delete m_impl;
   }
 
   template<class T>
-  T* pimpl<T>::operator->(void)
+  inline T* pimpl<T>::operator->(void)
   {
     return get();
   }
 
   template<class T>
-  const T* pimpl<T>::operator->(void) const
+  inline const T* pimpl<T>::operator->(void) const
   {
     return get();
   }
 
   template<class T>
-  T& pimpl<T>::operator*(void)
+  inline T& pimpl<T>::operator*(void)
   {
     return *get();
   }
 
   template<class T>
-  const T& pimpl<T>::operator*(void) const
+  inline const T& pimpl<T>::operator*(void) const
   {
     return *get();
   }
 
   template<class T>
-  T* pimpl<T>::get(void)
+  inline T* pimpl<T>::get(void)
   {
     return m_impl;
   }
 
   template<class T>
-  const T* pimpl<T>::get(void) const
+  inline const T* pimpl<T>::get(void) const
   {
     return m_impl;
   }

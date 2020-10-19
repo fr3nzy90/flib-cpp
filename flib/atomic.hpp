@@ -38,197 +38,130 @@ namespace flib
     using value_t = T;
 
     atomic(void) = default;
-    explicit inline atomic(T desired);
+    explicit atomic(T desired);
     atomic(const atomic&) = delete;
     atomic(atomic&&) = default;
     ~atomic(void) noexcept = default; // It is only safe to invoke the destructor if all threads have been notified. 
                                       // It is not required that they have exited their respective wait functions: some
                                       // threads may still be waiting to reacquire the associated lock, or may be
                                       // waiting to be scheduled to run after reacquiring it.
-    inline T operator=(T desired);
+    T operator=(T desired);
     atomic& operator=(const atomic&) = delete;
     atomic& operator=(atomic&&) = default;
-    inline operator T(void) const;
-    inline T exchange(T desired);
-    inline T load(void) const;
-    inline void notify_all(void);
-    inline void notify_one(void);
-    inline void store(T desired);
-    inline void wait(predicate_t predicate);
+    operator T(void) const;
+    T exchange(T desired);
+    T load(void) const;
+    void notify_all(void);
+    void notify_one(void);
+    void store(T desired);
+    void wait(predicate_t predicate);
     template<class Rep, class Period>
-    inline bool wait_for(const std::chrono::duration<Rep, Period>& duration, predicate_t predicate);
+    bool wait_for(const std::chrono::duration<Rep, Period>& duration, predicate_t predicate);
     template<class Clock, class Duration>
-    inline bool wait_until(const std::chrono::time_point<Clock, Duration>& timeout, predicate_t predicate);
+    bool wait_until(const std::chrono::time_point<Clock, Duration>& timeout, predicate_t predicate);
 
   private:
-    class _impl;
-    pimpl<_impl> m_impl;
+    struct _storage;
+
+    bool _condition_check(predicate_t predicate) const;
+
+    pimpl<_storage> m_storage;
   };
 
   // IMPLEMENTATION
 
   template<class T>
-  class atomic<T>::_impl
+  struct atomic<T>::_storage
   {
-  public:
-    inline _impl(T desired = {});
-    inline T _exchange(T desired);
-    inline T _load(void) const;
-    inline void _notify_all(void);
-    inline void _notify_one(void);
-    inline void _store(T desired);
-    inline void _wait(predicate_t predicate);
-    template<class Rep, class Period>
-    inline bool _wait_for(const std::chrono::duration<Rep, Period>& duration, predicate_t predicate);
-    template<class Clock, class Duration>
-    inline bool _wait_until(const std::chrono::time_point<Clock, Duration>& timeout, predicate_t predicate);
-
-  private:
-    inline bool __condition_check(predicate_t predicate) const;
-
-    T m_value;
-    std::condition_variable m_condition;
-    mutable std::mutex m_condition_mtx;
+    T value{};
+    std::condition_variable condition;
+    mutable std::mutex condition_mtx;
   };
 
   template<class T>
-  atomic<T>::_impl::_impl(T desired)
-    : m_value(std::move(desired))
+  inline atomic<T>::atomic(T desired)
   {
+    m_storage->value = std::move(desired);
   }
 
   template<class T>
-  T atomic<T>::_impl::_exchange(T desired)
+  inline  T atomic<T>::operator=(T desired)
   {
-    std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-    auto value = std::move(m_value);
-    m_value = desired;
-    return value;
-  }
-
-  template<class T>
-  T atomic<T>::_impl::_load(void) const
-  {
-    std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-    return m_value;
-  }
-
-  template<class T>
-  void atomic<T>::_impl::_notify_all(void)
-  {
-    m_condition.notify_all();
-  }
-
-  template<class T>
-  void atomic<T>::_impl::_notify_one(void)
-  {
-    m_condition.notify_one();
-  }
-
-  template<class T>
-  void atomic<T>::_impl::_store(T desired)
-  {
-    std::lock_guard<std::mutex> condition_guard(m_condition_mtx);
-    m_value = desired;
-  }
-
-  template<class T>
-  void atomic<T>::_impl::_wait(predicate_t predicate)
-  {
-    std::unique_lock<std::mutex> condition_guard(m_condition_mtx);
-    m_condition.wait(condition_guard, std::bind(&_impl::__condition_check, this, std::move(predicate)));
-  }
-
-  template<class T>
-  template<class Rep, class Period>
-  bool atomic<T>::_impl::_wait_for(const std::chrono::duration<Rep, Period>& duration, predicate_t predicate)
-  {
-    std::unique_lock<std::mutex> condition_guard(m_condition_mtx);
-    return m_condition.wait_for(condition_guard, duration,
-      std::bind(&_impl::__condition_check, this, std::move(predicate)));
-  }
-
-  template<class T>
-  template<class Clock, class Duration>
-  bool atomic<T>::_impl::_wait_until(const std::chrono::time_point<Clock, Duration>& timeout, predicate_t predicate)
-  {
-    std::unique_lock<std::mutex> condition_guard(m_condition_mtx);
-    return m_condition.wait_until(condition_guard, timeout,
-      std::bind(&_impl::__condition_check, this, std::move(predicate)));
-  }
-
-  template<class T>
-  bool atomic<T>::_impl::__condition_check(predicate_t predicate) const
-  {
-    return predicate(m_value);
-  }
-
-  template<class T>
-  atomic<T>::atomic(T desired)
-    : m_impl(std::move(desired))
-  {
-  }
-
-  template<class T>
-  T atomic<T>::operator=(T desired)
-  {
-    m_impl->_store(desired);
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    m_storage->value = desired;
     return desired;
   }
 
   template<class T>
-  atomic<T>::operator T(void) const
+  inline  atomic<T>::operator T(void) const
   {
-    return m_impl->_load();
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    return m_storage->value;
   }
 
   template<class T>
-  T atomic<T>::exchange(T desired)
+  inline T atomic<T>::exchange(T desired)
   {
-    return m_impl->_exchange(std::move(desired));
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    auto value = std::move(m_storage->value);
+    m_storage->value = std::move(desired);
+    return value;
   }
 
   template<class T>
-  T atomic<T>::load(void) const
+  inline T atomic<T>::load(void) const
   {
-    return m_impl->_load();
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    return m_storage->value;
   }
 
   template<class T>
-  void atomic<T>::notify_all(void)
+  inline void atomic<T>::notify_all(void)
   {
-    m_impl->_notify_all();
+    m_storage->condition.notify_all();
   }
 
   template<class T>
-  void atomic<T>::notify_one(void)
+  inline void atomic<T>::notify_one(void)
   {
-    m_impl->_notify_one();
+    m_storage->condition.notify_one();
   }
 
   template<class T>
-  void atomic<T>::store(T desired)
+  inline void atomic<T>::store(T desired)
   {
-    m_impl->_store(std::move(desired));
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    m_storage->value = std::move(desired);
   }
 
   template<class T>
-  void atomic<T>::wait(predicate_t predicate)
+  inline void atomic<T>::wait(predicate_t predicate)
   {
-    m_impl->_wait(std::move(predicate));
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    m_storage->condition.wait(condition_guard, std::bind(&atomic<T>::_condition_check, this, std::move(predicate)));
   }
 
   template<class T>
   template<class Rep, class Period>
-  bool atomic<T>::wait_for(const std::chrono::duration<Rep, Period>& duration, predicate_t predicate)
+  inline bool atomic<T>::wait_for(const std::chrono::duration<Rep, Period>& duration, predicate_t predicate)
   {
-    return m_impl->_wait_for(duration, std::move(predicate));
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    return m_storage->condition.wait_for(condition_guard, duration,
+      std::bind(&atomic<T>::_condition_check, this, std::move(predicate)));
   }
 
   template<class T>
   template<class Clock, class Duration>
-  bool atomic<T>::wait_until(const std::chrono::time_point<Clock, Duration>& timeout, predicate_t predicate)
+  inline bool atomic<T>::wait_until(const std::chrono::time_point<Clock, Duration>& timeout, predicate_t predicate)
   {
-    return m_impl->_wait_until(timeout, std::move(predicate));
+    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
+    return m_storage->condition.wait_until(condition_guard, timeout,
+      std::bind(&atomic<T>::_condition_check, this, std::move(predicate)));
+  }
+
+  template<class T>
+  inline bool atomic<T>::_condition_check(predicate_t predicate) const
+  {
+    return predicate(m_storage->value);
   }
 }

@@ -72,7 +72,7 @@ namespace flib
     //
     // Returns:
     //   DLL handle
-    inline dll_t open_library(const std::string& filepath);
+    dll_t open_library(const std::string& filepath);
 
     // Function for unloading DLL
     // 
@@ -85,7 +85,7 @@ namespace flib
     //
     // Returns:
     //   DLL handle
-    inline void close_library(dll_t handle);
+    void close_library(dll_t handle);
 
     // Function for unloading DLL
     // 
@@ -104,11 +104,11 @@ namespace flib
     // Returns:
     //   DLL handle
     template<class T>
-    inline std::function<T> get_library_function(dll_t handle, const std::string& name);
+    std::function<T> get_library_function(dll_t handle, const std::string& name);
 
     // IMPLEMENTATION
 
-    dll_t open_library(const std::string& filepath)
+    inline dll_t open_library(const std::string& filepath)
     {
 #if defined(_WIN32)
       auto handle = ::LoadLibraryA(filepath.c_str());
@@ -129,7 +129,7 @@ namespace flib
 #endif
     }
 
-    void close_library(dll_t handle)
+    inline void close_library(dll_t handle)
     {
 #if defined(_WIN32)
       auto module_handle = static_cast<HMODULE>(handle);
@@ -150,7 +150,7 @@ namespace flib
     }
 
     template<class T>
-    std::function<T> get_library_function(dll_t handle, const std::string& name)
+    inline std::function<T> get_library_function(dll_t handle, const std::string& name)
     {
 #if defined(_WIN32)
       auto module_handle = static_cast<HMODULE>(handle);

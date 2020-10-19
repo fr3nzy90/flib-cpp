@@ -37,7 +37,7 @@ namespace flib
       //
       // Returns:
       //   native reference byte endianess
-      inline static uint8_t native(void);
+      static uint8_t native(void);
 
       enum : uint8_t
       {
@@ -56,30 +56,30 @@ namespace flib
     //
     // Parameters:
     //   data - 16-bit unsigned integer
-    inline void byte_swap(uint16_t& data) noexcept;
+    void byte_swap(uint16_t& data) noexcept;
 
     // Method for reversing bytes of 32-bit unsigned integer
     //
     // Parameters:
     //   data - 32-bit unsigned integer
-    inline void byte_swap(uint32_t& data) noexcept;
+    void byte_swap(uint32_t& data) noexcept;
 
     // Method for reversing bytes of 64-bit unsigned integer
     //
     // Parameters:
     //   data - 64-bit unsigned integer
-    inline void byte_swap(uint64_t& data) noexcept;
+    void byte_swap(uint64_t& data) noexcept;
 
     // Method for inplace reversing bytes of given contiguous memory block
     //
     // Parameters:
     //   start - Pointer to the first byte of contiguous memory block
     //     end - Pointer to byte after last byte of contiguous memory block
-    inline void byte_swap(uint8_t* start, uint8_t* end) noexcept;
+    void byte_swap(uint8_t* start, uint8_t* end) noexcept;
 
     // IMPLEMENTATION
 
-    uint8_t endianess::native(void)
+    inline uint8_t endianess::native(void)
     {
       static uint8_t result = 0;
       if (0 == result)
@@ -90,7 +90,7 @@ namespace flib
       return result;
     }
 
-    void byte_swap(uint16_t& data) noexcept
+    inline void byte_swap(uint16_t& data) noexcept
     {
 #if   defined(_MSC_VER)
       data = _byteswap_ushort(data);
@@ -101,7 +101,7 @@ namespace flib
 #endif
     }
 
-    void byte_swap(uint32_t& data) noexcept
+    inline void byte_swap(uint32_t& data) noexcept
     {
 #if   defined(_MSC_VER)
       data = _byteswap_ulong(data);
@@ -113,7 +113,7 @@ namespace flib
 #endif
     }
 
-    void byte_swap(uint64_t& data) noexcept
+    inline void byte_swap(uint64_t& data) noexcept
     {
 #if   defined(_MSC_VER)
       data = _byteswap_uint64(data);
@@ -126,7 +126,7 @@ namespace flib
 #endif
     }
 
-    void byte_swap(uint8_t* start, uint8_t* end) noexcept
+    inline void byte_swap(uint8_t* start, uint8_t* end) noexcept
     {
       uint8_t temp;
       for (--end; start < end; ++start, --end)
