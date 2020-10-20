@@ -36,6 +36,11 @@ namespace flib
   {
   public:
     observable_subscription(void);
+    observable_subscription(const observable_subscription&) = default;
+    observable_subscription(observable_subscription&&) = default;
+    ~observable_subscription(void) noexcept = default;
+    observable_subscription& operator=(const observable_subscription&) = default;
+    observable_subscription& operator=(observable_subscription&&) = default;
     bool expired(void) const;
     void unsubscribe(void);
 
@@ -56,9 +61,7 @@ namespace flib
     using size_t = std::size_t;
 
     observable_base(const observable_base&) = delete;
-    observable_base(observable_base&&) = default;
     observable_base& operator=(const observable_base&) = delete;
-    observable_base& operator=(observable_base&&) = default;
     void clear(void);
     bool empty(void) const;
     bool owner(const observable_subscription& subscription) const;
@@ -69,7 +72,9 @@ namespace flib
     struct _storage;
 
     observable_base(void) = default;
+    observable_base(observable_base&&) = default;
     ~observable_base(void) noexcept = default;
+    observable_base& operator=(observable_base&&) = default;
     observable_subscription _create(observable_subscription::token_t token);
 
     pimpl<_storage> m_storage;
@@ -85,7 +90,7 @@ namespace flib
     observable(void) = default;
     observable(const observable&) = delete;
     observable(observable&&) = default;
-    ~observable(void) noexcept = default;
+    ~observable(void) noexcept;
     observable& operator=(const observable&) = delete;
     observable& operator=(observable&&) = default;
     void publish(Args... args) const;
@@ -158,6 +163,12 @@ namespace flib
   inline observable_subscription observable_base::_create(observable_subscription::token_t token)
   {
     return { *this, token };
+  }
+
+  template<class ...Args>
+  inline observable<Args...>::~observable(void) noexcept
+  {
+    clear();
   }
 
   template<class ...Args>

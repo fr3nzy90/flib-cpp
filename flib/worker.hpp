@@ -42,6 +42,11 @@ namespace flib
   {
   public:
     worker_invocation(void);
+    worker_invocation(const worker_invocation&) = default;
+    worker_invocation(worker_invocation&&) = default;
+    ~worker_invocation(void) noexcept = default;
+    worker_invocation& operator=(const worker_invocation&) = default;
+    worker_invocation& operator=(worker_invocation&&) = default;
     void cancel(void);
     bool expired(void) const;
 
