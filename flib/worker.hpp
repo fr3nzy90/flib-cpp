@@ -106,7 +106,7 @@ namespace flib
 
   // IMPLEMENTATION
 
-  inline  worker_invocation::worker_invocation(void)
+  inline worker_invocation::worker_invocation(void)
     : m_owner(nullptr)
   {
   }

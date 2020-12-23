@@ -85,7 +85,7 @@ namespace flib
   }
 
   template<class T>
-  inline  T atomic<T>::operator=(T desired)
+  inline T atomic<T>::operator=(T desired)
   {
     std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
     m_storage->value = desired;
@@ -93,7 +93,7 @@ namespace flib
   }
 
   template<class T>
-  inline  atomic<T>::operator T(void) const
+  inline atomic<T>::operator T(void) const
   {
     std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
     return m_storage->value;

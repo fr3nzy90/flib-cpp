@@ -29,7 +29,7 @@ if(UNIX)
   add_definitions(-pthread)
 endif()
 
-add_executable(${project_name} ${src_files} )
+add_executable(${project_name} ${src_files})
 
 add_dependencies(${project_name} test_dll)
 
