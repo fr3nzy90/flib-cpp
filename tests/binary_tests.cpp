@@ -17,11 +17,9 @@
 * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <cstddef>
-
-#include <catch2/catch.hpp>
-
 #include <flib/binary.hpp>
+
+#include <cstddef>
 
 #include "testing.hpp"
 

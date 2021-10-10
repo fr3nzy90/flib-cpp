@@ -25,5 +25,7 @@
 #include <flib/observable.hpp>
 #include <flib/pimpl.hpp>
 #include <flib/timer.hpp>
+#include <flib/timestamp.hpp>
+#include <flib/uuid.hpp>
 #include <flib/version.hpp>
 #include <flib/worker.hpp>

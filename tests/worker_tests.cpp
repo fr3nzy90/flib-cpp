@@ -17,10 +17,10 @@
 * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
+#include <flib/worker.hpp>
+
 #include <atomic>
 #include <cstdint>
-
-#include <flib/worker.hpp>
 
 #include "testing.hpp"
 

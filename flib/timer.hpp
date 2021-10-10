@@ -79,7 +79,7 @@ namespace flib
 
   struct timer::_executor
   {
-    bool running = false;
+    bool running{ false };
     std::future<void> result;
   };
 
@@ -88,8 +88,8 @@ namespace flib
     event_t event;
     duration_t delay{};
     duration_t period{};
-    type_t type = type_t::fixed_delay;
-    _state_t state = _state_t::destruct;
+    type_t type{ type_t::fixed_delay };
+    _state_t state{ _state_t::destruct };
     _clock_t::time_point event_time;
     _executor executor;
     std::condition_variable condition;

@@ -39,7 +39,8 @@ namespace flib
       //   native reference byte endianess
       static uint8_t native(void);
 
-      enum : uint8_t
+      enum
+        : uint8_t
       {
         // Big byte - reference byte endianess
         big_byte = 0x76u,

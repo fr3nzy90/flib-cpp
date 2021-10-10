@@ -145,7 +145,7 @@ namespace flib
 
   struct worker::_storage
   {
-    _state_t state = _state_t::destruct;
+    _state_t state{ _state_t::destruct };
     std::list<std::shared_ptr<_invocation>> invocations;
     std::list<_executor> executors;
     std::condition_variable condition;
