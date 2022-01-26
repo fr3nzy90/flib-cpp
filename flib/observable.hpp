@@ -174,7 +174,6 @@ namespace flib
   template<class ...Args>
   inline void observable<Args...>::publish(Args... args) const
   {
-
     std::unique_lock<std::mutex> subscriptions_guard(m_storage->subscriptions_mtx);
     auto subscriptions = m_storage->subscriptions;
     subscriptions_guard.unlock();
