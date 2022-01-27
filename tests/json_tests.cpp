@@ -715,47 +715,55 @@ TEST_CASE("Json tests - Equality check", "[json]")
   {
     auto object = flib::json();
     REQUIRE(object == nullptr);
+    REQUIRE_FALSE(object != nullptr);
   }
   SECTION("Boolean")
   {
     auto value = true;
     auto object = flib::json(value);
     REQUIRE(object == value);
+    REQUIRE_FALSE(object != value);
   }
   SECTION("Signed integer")
   {
     auto value = 123;
     auto object = flib::json(value);
     REQUIRE(object == value);
+    REQUIRE_FALSE(object != value);
   }
   SECTION("Unsigned integer")
   {
     auto value = 123u;
     auto object = flib::json(value);
     REQUIRE(object == value);
+    REQUIRE_FALSE(object != value);
   }
   SECTION("Float")
   {
     auto value = 123.456;
     auto object = flib::json(value);
     REQUIRE(object == value);
+    REQUIRE_FALSE(object != value);
   }
   SECTION("String")
   {
     auto value = "test";
     auto object = flib::json(value);
     REQUIRE(object == value);
+    REQUIRE_FALSE(object != value);
   }
   SECTION("Array")
   {
     auto value = flib::json::array_t{ 1,2,3 };
     auto object = flib::json(value);
     REQUIRE(object == value);
+    REQUIRE_FALSE(object != value);
   }
   SECTION("Object")
   {
     auto value = flib::json::object_t{ {"key1",1},{"key2",1} };
     auto object = flib::json(value);
     REQUIRE(object == value);
+    REQUIRE_FALSE(object != value);
   }
 }
