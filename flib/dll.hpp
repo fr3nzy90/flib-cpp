@@ -82,12 +82,9 @@ namespace flib
     //
     // Parameters:
     //   handle - DLL handle
-    //
-    // Returns:
-    //   DLL handle
     void close_library(dll_t handle);
 
-    // Function for unloading DLL
+    // Function for retrieving functions defined in dll
     // 
     // Notes:
     //   - DLLs maintains reference counter and will be unloaded when reference count reaches 0
@@ -102,7 +99,7 @@ namespace flib
     //     name - name of the exported function
     //
     // Returns:
-    //   DLL handle
+    //   retrieved function
     template<class T>
     std::function<T> get_library_function(dll_t handle, const std::string& name);
 
