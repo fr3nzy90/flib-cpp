@@ -20,15 +20,15 @@
 #include <flib/uuid.hpp>
 
 #include <regex>
+#include <string>
 
-#include "testing.hpp"
+#include <catch2/catch2.hpp>
 
 namespace
 {
   bool check_uuid_v4(const std::string& uuid)
   {
-    static const std::regex regex("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
-      std::regex_constants::icase);
+    static const std::regex regex("^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$", std::regex_constants::icase);
     return std::regex_match(uuid, regex);
   }
 }

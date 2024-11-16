@@ -19,7 +19,9 @@
 
 #include <flib/dll.hpp>
 
-#include "testing.hpp"
+#include <string>
+
+#include <catch2/catch2.hpp>
 
 namespace
 {

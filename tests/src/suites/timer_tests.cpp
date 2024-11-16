@@ -20,9 +20,21 @@
 #include <flib/timer.hpp>
 
 #include <atomic>
+#include <chrono>
 #include <cstdint>
+#include <thread>
 
-#include "testing.hpp"
+#include <catch2/catch2.hpp>
+
+namespace
+{
+  using milliseconds = std::chrono::duration<uint64_t, std::milli>;
+
+  inline void sleep_for(const ::milliseconds& duration)
+  {
+    std::this_thread::sleep_until(std::chrono::high_resolution_clock::now() + duration);
+  }
+}
 
 TEST_CASE("Timer tests - Sanity check", "[timer]")
 {
@@ -30,7 +42,7 @@ TEST_CASE("Timer tests - Sanity check", "[timer]")
   {
     flib::timer timer;
     REQUIRE(!timer.scheduled());
-    timer.schedule({}, std::chrono::milliseconds(100));
+    timer.schedule({}, ::milliseconds(100));
     REQUIRE(!timer.scheduled());
     timer.reschedule();
     REQUIRE(!timer.scheduled());
@@ -39,7 +51,7 @@ TEST_CASE("Timer tests - Sanity check", "[timer]")
   {
     auto timer{ flib::timer() };
     REQUIRE(!timer.scheduled());
-    timer.schedule({}, std::chrono::milliseconds(100));
+    timer.schedule({}, ::milliseconds(100));
     REQUIRE(!timer.scheduled());
     timer.reschedule();
     REQUIRE(!timer.scheduled());
@@ -48,7 +60,7 @@ TEST_CASE("Timer tests - Sanity check", "[timer]")
   {
     auto timer = flib::timer();
     REQUIRE(!timer.scheduled());
-    timer.schedule({}, std::chrono::milliseconds(100));
+    timer.schedule({}, ::milliseconds(100));
     REQUIRE(!timer.scheduled());
     timer.reschedule();
     REQUIRE(!timer.scheduled());
@@ -65,8 +77,8 @@ TEST_CASE("Timer tests - Timing", "[timer]")
     {
       ++reference;
     };
-    timer.schedule(event, std::chrono::milliseconds(0));
-    testing::sleep_for(std::chrono::milliseconds(50));
+    timer.schedule(event, ::milliseconds(0));
+    ::sleep_for(::milliseconds(50));
     REQUIRE(!timer.scheduled());
     REQUIRE(1 == reference);
   }
@@ -78,12 +90,12 @@ TEST_CASE("Timer tests - Timing", "[timer]")
     {
       ++reference;
     };
-    timer.schedule(event, std::chrono::milliseconds(100));
+    timer.schedule(event, ::milliseconds(100));
     REQUIRE(timer.scheduled());
-    testing::sleep_for(std::chrono::milliseconds(50));
+    ::sleep_for(::milliseconds(50));
     REQUIRE(timer.scheduled());
     REQUIRE(0 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(!timer.scheduled());
     REQUIRE(1 == reference);
   }
@@ -94,20 +106,19 @@ TEST_CASE("Timer tests - Timing", "[timer]")
     auto event = [&reference]
     {
       ++reference;
-      testing::sleep_for(std::chrono::milliseconds(100));
+      ::sleep_for(::milliseconds(100));
     };
-    timer.schedule(event, std::chrono::milliseconds(0), std::chrono::milliseconds(100),
-      flib::timer::type_t::fixed_delay);
-    testing::sleep_for(std::chrono::milliseconds(50));
+    timer.schedule(event, ::milliseconds(0), ::milliseconds(100), flib::timer::type_t::fixed_delay);
+    ::sleep_for(::milliseconds(50));
     REQUIRE(timer.scheduled());
     REQUIRE(1 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(timer.scheduled());
     REQUIRE(1 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(timer.scheduled());
     REQUIRE(2 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(timer.scheduled());
     REQUIRE(2 == reference);
   }
@@ -118,24 +129,23 @@ TEST_CASE("Timer tests - Timing", "[timer]")
     auto event = [&reference]
     {
       ++reference;
-      testing::sleep_for(std::chrono::milliseconds(100));
+      ::sleep_for(::milliseconds(100));
     };
-    timer.schedule(event, std::chrono::milliseconds(100), std::chrono::milliseconds(100),
-      flib::timer::type_t::fixed_delay);
+    timer.schedule(event, ::milliseconds(100), ::milliseconds(100), flib::timer::type_t::fixed_delay);
     REQUIRE(timer.scheduled());
-    testing::sleep_for(std::chrono::milliseconds(50));
+    ::sleep_for(::milliseconds(50));
     REQUIRE(timer.scheduled());
     REQUIRE(0 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(timer.scheduled());
     REQUIRE(1 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(timer.scheduled());
     REQUIRE(1 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(timer.scheduled());
     REQUIRE(2 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(timer.scheduled());
     REQUIRE(2 == reference);
   }
@@ -146,14 +156,13 @@ TEST_CASE("Timer tests - Timing", "[timer]")
     auto event = [&reference]
     {
       ++reference;
-      testing::sleep_for(std::chrono::milliseconds(100));
+      ::sleep_for(::milliseconds(100));
     };
-    timer.schedule(event, std::chrono::milliseconds(0), std::chrono::milliseconds(100),
-      flib::timer::type_t::fixed_rate);
-    testing::sleep_for(std::chrono::milliseconds(50));
+    timer.schedule(event, ::milliseconds(0), ::milliseconds(100), flib::timer::type_t::fixed_rate);
+    ::sleep_for(::milliseconds(50));
     REQUIRE(timer.scheduled());
     REQUIRE(1 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(timer.scheduled());
     REQUIRE(2 == reference);
   }
@@ -164,18 +173,17 @@ TEST_CASE("Timer tests - Timing", "[timer]")
     auto event = [&reference]
     {
       ++reference;
-      testing::sleep_for(std::chrono::milliseconds(50));
+      ::sleep_for(::milliseconds(50));
     };
-    timer.schedule(event, std::chrono::milliseconds(100), std::chrono::milliseconds(100),
-      flib::timer::type_t::fixed_rate);
+    timer.schedule(event, ::milliseconds(100), ::milliseconds(100), flib::timer::type_t::fixed_rate);
     REQUIRE(timer.scheduled());
-    testing::sleep_for(std::chrono::milliseconds(50));
+    ::sleep_for(::milliseconds(50));
     REQUIRE(timer.scheduled());
     REQUIRE(0 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(timer.scheduled());
     REQUIRE(1 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(timer.scheduled());
     REQUIRE(2 == reference);
   }
@@ -190,16 +198,16 @@ TEST_CASE("Timer tests - Cancellation", "[timer]")
     auto event = [&reference]
     {
       ++reference;
-      testing::sleep_for(std::chrono::milliseconds(100));
+      ::sleep_for(::milliseconds(100));
     };
-    timer.schedule(event, std::chrono::milliseconds(0), std::chrono::milliseconds(10));
+    timer.schedule(event, ::milliseconds(0), ::milliseconds(10));
     REQUIRE(timer.scheduled());
-    testing::sleep_for(std::chrono::milliseconds(50));
+    ::sleep_for(::milliseconds(50));
     REQUIRE(timer.scheduled());
     REQUIRE(1 == reference);
     timer.clear();
     REQUIRE(!timer.scheduled());
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(1 == reference);
   }
   SECTION("Within periodic execution")
@@ -209,20 +217,19 @@ TEST_CASE("Timer tests - Cancellation", "[timer]")
     auto event = [&reference]
     {
       ++reference;
-      testing::sleep_for(std::chrono::milliseconds(100));
+      ::sleep_for(::milliseconds(100));
     };
-    timer.schedule(event, std::chrono::milliseconds(0), std::chrono::milliseconds(100),
-      flib::timer::type_t::fixed_rate);
+    timer.schedule(event, ::milliseconds(0), ::milliseconds(100), flib::timer::type_t::fixed_rate);
     REQUIRE(timer.scheduled());
-    testing::sleep_for(std::chrono::milliseconds(50));
+    ::sleep_for(::milliseconds(50));
     REQUIRE(timer.scheduled());
     REQUIRE(1 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(timer.scheduled());
     REQUIRE(2 == reference);
     timer.clear();
     REQUIRE(!timer.scheduled());
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(2 == reference);
   }
   SECTION("Event driven")
@@ -232,15 +239,15 @@ TEST_CASE("Timer tests - Cancellation", "[timer]")
     auto event = [&reference, &timer]
     {
       ++reference;
-      testing::sleep_for(std::chrono::milliseconds(50));
+      ::sleep_for(::milliseconds(50));
       timer.clear();
     };
-    timer.schedule(event, std::chrono::milliseconds(0), std::chrono::milliseconds(10));
+    timer.schedule(event, ::milliseconds(0), ::milliseconds(10));
     REQUIRE(timer.scheduled());
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(!timer.scheduled());
     REQUIRE(1 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(1 == reference);
   }
 }
@@ -255,28 +262,28 @@ TEST_CASE("Timer tests - Rescheduling", "[timer]")
     {
       ++reference;
     };
-    timer.schedule(event, std::chrono::milliseconds(50));
+    timer.schedule(event, ::milliseconds(50));
     REQUIRE(timer.scheduled());
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(!timer.scheduled());
     REQUIRE(1 == reference);
     timer.reschedule();
     REQUIRE(timer.scheduled());
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(!timer.scheduled());
     REQUIRE(2 == reference);
-    timer.schedule(event, std::chrono::milliseconds(200), std::chrono::milliseconds(100));
+    timer.schedule(event, ::milliseconds(200), ::milliseconds(100));
     REQUIRE(timer.scheduled());
-    testing::sleep_for(std::chrono::milliseconds(250));
+    ::sleep_for(::milliseconds(250));
     REQUIRE(timer.scheduled());
     REQUIRE(3 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(4 == reference);
     timer.reschedule();
-    testing::sleep_for(std::chrono::milliseconds(250));
+    ::sleep_for(::milliseconds(250));
     REQUIRE(timer.scheduled());
     REQUIRE(5 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(6 == reference);
   }
   SECTION("Event driven")
@@ -290,17 +297,17 @@ TEST_CASE("Timer tests - Rescheduling", "[timer]")
     auto event1 = [&reference, &timer, &event2]
     {
       ++reference;
-      timer.schedule(event2, std::chrono::milliseconds(100), std::chrono::milliseconds(100));
+      timer.schedule(event2, ::milliseconds(100), ::milliseconds(100));
     };
-    timer.schedule(event1, std::chrono::milliseconds(0));
+    timer.schedule(event1, ::milliseconds(0));
     REQUIRE(timer.scheduled());
-    testing::sleep_for(std::chrono::milliseconds(50));
+    ::sleep_for(::milliseconds(50));
     REQUIRE(timer.scheduled());
     REQUIRE(1 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(timer.scheduled());
     REQUIRE(3 == reference);
-    testing::sleep_for(std::chrono::milliseconds(100));
+    ::sleep_for(::milliseconds(100));
     REQUIRE(timer.scheduled());
     REQUIRE(5 == reference);
   }

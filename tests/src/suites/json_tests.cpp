@@ -19,9 +19,10 @@
 
 #include <flib/json.hpp>
 
+#include <stdexcept>
 #include <utility>
 
-#include "testing.hpp"
+#include <catch2/catch2.hpp>
 
 namespace
 {

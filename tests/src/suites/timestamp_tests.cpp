@@ -20,12 +20,14 @@
 #include <flib/timestamp.hpp>
 
 #include <cstdint>
+#include <chrono>
 #include <list>
 #include <ratio>
 #include <regex>
 #include <stdexcept>
+#include <string>
 
-#include "testing.hpp"
+#include <catch2/catch2.hpp>
 
 namespace
 {

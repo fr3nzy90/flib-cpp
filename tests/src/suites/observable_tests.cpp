@@ -21,8 +21,9 @@
 
 #include <atomic>
 #include <cstdint>
+#include <string>
 
-#include "testing.hpp"
+#include <catch2/catch2.hpp>
 
 TEST_CASE("Observable tests - Sanity check", "[observable]")
 {
@@ -138,12 +139,12 @@ TEST_CASE("Observable tests - Complex types", "[observable]")
   flib::observable<bool, std::string> observable;
   std::atomic<uint32_t> reference(0);
   auto observer = [&reference](bool arg1, const std::string& arg2)
-  {
-    if (arg1 && "1" == arg2)
     {
-      ++reference;
-    }
-  };
+      if (arg1 && "1" == arg2)
+      {
+        ++reference;
+      }
+    };
   auto subscription1 = observable.subscribe(observer);
   REQUIRE(!subscription1.expired());
   REQUIRE(observable.owner(subscription1));

@@ -20,8 +20,9 @@
 #include <flib/binary.hpp>
 
 #include <cstddef>
+#include <algorithm>
 
-#include "testing.hpp"
+#include <catch2/catch2.hpp>
 
 namespace
 {

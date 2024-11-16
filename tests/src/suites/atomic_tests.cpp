@@ -19,10 +19,13 @@
 
 #include <flib/atomic.hpp>
 
+#include <chrono>
+#include <functional>
 #include <future>
+#include <string>
 #include <tuple>
 
-#include "testing.hpp"
+#include <catch2/catch2.hpp>
 
 TEST_CASE("Atomic tests - Sanity check", "[atomic]")
 {

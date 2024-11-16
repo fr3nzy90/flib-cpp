@@ -1,7 +1,7 @@
 /*
 * MIT License
 *
-* Copyright (c) 2019 Luka Arnecic
+* Copyright (c) 2024 Luka Arnecic
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -17,18 +17,15 @@
 * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#include <chrono>
-#include <exception>
-#include <string>
-#include <thread>
-
-#include <catch2/catch2.hpp>
-
-namespace testing
-{
-  template<class T>
-  inline void sleep_for(const T& duration)
-  {
-    std::this_thread::sleep_until(std::chrono::high_resolution_clock::now() + duration);
-  }
-}
+// safeguard against redefinition link issue in case of multiple header inclusion within single compilation unit
+#include <flib/atomic.hpp>
+#include <flib/binary.hpp>
+#include <flib/dll.hpp>
+#include <flib/json.hpp>
+#include <flib/observable.hpp>
+#include <flib/pimpl.hpp>
+#include <flib/timer.hpp>
+#include <flib/timestamp.hpp>
+#include <flib/uuid.hpp>
+#include <flib/version.hpp>
+#include <flib/worker.hpp>
