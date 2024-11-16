@@ -44,7 +44,7 @@ if(MSVC)
   message("***                CMAKE_CXX_FLAGS set to: ${CMAKE_CXX_FLAGS}")
 else()
   list(APPEND CMAKE_CXX_FLAGS_LIST
-    -std=c++11
+    -std=c++14
     -fPIE
     -fvisibility=hidden
     -pipe
