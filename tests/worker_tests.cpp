@@ -53,9 +53,9 @@ TEST_CASE("Worker tests - Sanity check", "[worker]")
   SECTION("Executorless worker")
   {
     REQUIRE_THROWS_MATCHES(flib::worker(true, 0), std::logic_error,
-      Catch::Message("Executorless worker not allowed"));
+      Catch::Matchers::Message("Executorless worker not allowed"));
     REQUIRE_THROWS_MATCHES(flib::worker(false, 0), std::logic_error,
-      Catch::Message("Executorless worker not allowed"));
+      Catch::Matchers::Message("Executorless worker not allowed"));
   }
   SECTION("Multi executor worker")
   {

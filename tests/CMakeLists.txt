@@ -31,7 +31,9 @@ endif()
 
 add_executable(${project_name} ${src_files})
 
-add_dependencies(${project_name} test_dll)
+add_dependencies(${project_name} ${Catch2_LIBRARIES} test_dll)
+
+target_link_libraries(${project_name} ${Catch2_LIBRARIES})
 
 if(UNIX)
   target_link_libraries(${project_name} pthread dl)

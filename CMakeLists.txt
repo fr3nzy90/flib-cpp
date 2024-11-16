@@ -64,12 +64,12 @@ else()
 endif()
 
 find_package(FLib REQUIRED HINTS "${CMAKE_SOURCE_DIR}")
-find_package(catch REQUIRED HINTS "${CMAKE_SOURCE_DIR}/3rd-party/catch")
+find_package(catch2 REQUIRED HINTS "${CMAKE_SOURCE_DIR}/3rd-party/catch2")
 
 message("***                          flib version: ${FLib_FIND_VERSION}")
 
 include_directories("${FLib_INCLUDE_DIRS}"
-                    "${Catch_INCLUDE_DIRS}")
+                    "${Catch2_INCLUDE_DIRS}")
                     
 add_subdirectory("${CMAKE_SOURCE_DIR}/test_dll")
 add_subdirectory("${CMAKE_SOURCE_DIR}/tests")

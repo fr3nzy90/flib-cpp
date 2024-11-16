@@ -1,7 +1,7 @@
 /*
 * MIT License
 *
-* Copyright (c) 2019 Luka Arnecic
+* Copyright (c) 2024 Luka Arnecic
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
 * documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
@@ -17,22 +17,15 @@
 * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#if defined(_DEBUG) & defined(_MSC_VER)
-#  define _CRTDBG_MAP_ALLOC
-#  include <stdlib.h>
-#  include <crtdbg.h>
-//#define new new(_NORMAL_BLOCK,__FILE__,__LINE__)
+#pragma once
+
+// Need to disable certain compiler warnings caused in 3rd-party header
+#ifdef _MSC_VER
+#  pragma warning(disable: 4003)
 #endif
 
-#define CATCH_CONFIG_RUNNER
-#include <catch2/catch.hpp>
+#include "../../v3.7.1/catch2/catch_amalgamated.hpp"
 
-// safeguard against redefinition link issue in case of multiple header inclusion within single compilation unit
-#include <flib/flib.hpp>
-
-int main(int argc, char* argv[]) {
-#if defined(_DEBUG) & defined(_MSC_VER)
-  _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#ifdef _MSC_VER
+#  pragma warning(default: 4003)
 #endif
-  return Catch::Session().run(argc, argv);
-}

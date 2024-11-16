@@ -42,11 +42,11 @@ TEST_CASE("Dynamic-link library tests - Sanity check", "[dll]")
   SECTION("Non-existing module")
   {
     REQUIRE_THROWS_MATCHES(flib::open_library(::module_path + ".xyz"), std::runtime_error,
-      testing::starts_with("Module loading failed"));
+      Catch::Matchers::MessageMatches(Catch::Matchers::StartsWith("Module loading failed")));
     REQUIRE_THROWS_MATCHES(flib::get_library_function<void(void)>(nullptr, "invalid"), std::invalid_argument,
-      Catch::Message("Invalid module handle"));
+      Catch::Matchers::Message("Invalid module handle"));
     REQUIRE_THROWS_MATCHES(flib::close_library(nullptr), std::invalid_argument,
-      Catch::Message("Invalid module handle"));
+      Catch::Matchers::Message("Invalid module handle"));
   }
 }
 
@@ -63,7 +63,7 @@ TEST_CASE("Dynamic-link library tests - Exported functions", "[dll]")
   {
     auto library = flib::open_library(::module_path);
     REQUIRE_THROWS_MATCHES(flib::get_library_function<void(void)>(library, "invalid"), std::runtime_error,
-      testing::starts_with("Function retrieval failed"));
+      Catch::Matchers::MessageMatches(Catch::Matchers::StartsWith("Function retrieval failed")));
     flib::close_library(library);
   }
 }

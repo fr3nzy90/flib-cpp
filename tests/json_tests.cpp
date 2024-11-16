@@ -36,19 +36,19 @@ namespace
   {
     REQUIRE(flib::json::value_t::null == object.type());
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::boolean>(), std::runtime_error,
-      Catch::Message("Json is not of type boolean"));
+      Catch::Matchers::Message("Json is not of type boolean"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_int>(), std::runtime_error,
-      Catch::Message("Json is not of type number_int"));
+      Catch::Matchers::Message("Json is not of type number_int"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_uint>(), std::runtime_error,
-      Catch::Message("Json is not of type number_uint"));
+      Catch::Matchers::Message("Json is not of type number_uint"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_float>(), std::runtime_error,
-      Catch::Message("Json is not of type number_float"));
+      Catch::Matchers::Message("Json is not of type number_float"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::string>(), std::runtime_error,
-      Catch::Message("Json is not of type string"));
+      Catch::Matchers::Message("Json is not of type string"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::array>(), std::runtime_error,
-      Catch::Message("Json is not of type array"));
+      Catch::Matchers::Message("Json is not of type array"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::object>(), std::runtime_error,
-      Catch::Message("Json is not of type object"));
+      Catch::Matchers::Message("Json is not of type object"));
   }
 
   template<>
@@ -57,17 +57,17 @@ namespace
     REQUIRE(flib::json::value_t::boolean == object.type());
     REQUIRE(expected == object.get<flib::json::value_t::boolean>());
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_int>(), std::runtime_error,
-      Catch::Message("Json is not of type number_int"));
+      Catch::Matchers::Message("Json is not of type number_int"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_uint>(), std::runtime_error,
-      Catch::Message("Json is not of type number_uint"));
+      Catch::Matchers::Message("Json is not of type number_uint"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_float>(), std::runtime_error,
-      Catch::Message("Json is not of type number_float"));
+      Catch::Matchers::Message("Json is not of type number_float"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::string>(), std::runtime_error,
-      Catch::Message("Json is not of type string"));
+      Catch::Matchers::Message("Json is not of type string"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::array>(), std::runtime_error,
-      Catch::Message("Json is not of type array"));
+      Catch::Matchers::Message("Json is not of type array"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::object>(), std::runtime_error,
-      Catch::Message("Json is not of type object"));
+      Catch::Matchers::Message("Json is not of type object"));
   }
 
   template<>
@@ -76,17 +76,17 @@ namespace
     REQUIRE(flib::json::value_t::number_int == object.type());
     REQUIRE(expected == object.get<flib::json::value_t::number_int>());
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::boolean>(), std::runtime_error,
-      Catch::Message("Json is not of type boolean"));
+      Catch::Matchers::Message("Json is not of type boolean"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_uint>(), std::runtime_error,
-      Catch::Message("Json is not of type number_uint"));
+      Catch::Matchers::Message("Json is not of type number_uint"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_float>(), std::runtime_error,
-      Catch::Message("Json is not of type number_float"));
+      Catch::Matchers::Message("Json is not of type number_float"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::string>(), std::runtime_error,
-      Catch::Message("Json is not of type string"));
+      Catch::Matchers::Message("Json is not of type string"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::array>(), std::runtime_error,
-      Catch::Message("Json is not of type array"));
+      Catch::Matchers::Message("Json is not of type array"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::object>(), std::runtime_error,
-      Catch::Message("Json is not of type object"));
+      Catch::Matchers::Message("Json is not of type object"));
   }
 
   template<>
@@ -95,17 +95,17 @@ namespace
     REQUIRE(flib::json::value_t::number_uint == object.type());
     REQUIRE(expected == object.get<flib::json::value_t::number_uint>());
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::boolean>(), std::runtime_error,
-      Catch::Message("Json is not of type boolean"));
+      Catch::Matchers::Message("Json is not of type boolean"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_int>(), std::runtime_error,
-      Catch::Message("Json is not of type number_int"));
+      Catch::Matchers::Message("Json is not of type number_int"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_float>(), std::runtime_error,
-      Catch::Message("Json is not of type number_float"));
+      Catch::Matchers::Message("Json is not of type number_float"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::string>(), std::runtime_error,
-      Catch::Message("Json is not of type string"));
+      Catch::Matchers::Message("Json is not of type string"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::array>(), std::runtime_error,
-      Catch::Message("Json is not of type array"));
+      Catch::Matchers::Message("Json is not of type array"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::object>(), std::runtime_error,
-      Catch::Message("Json is not of type object"));
+      Catch::Matchers::Message("Json is not of type object"));
   }
 
   template<>
@@ -114,17 +114,17 @@ namespace
     REQUIRE(flib::json::value_t::number_float == object.type());
     REQUIRE(expected == object.get<flib::json::value_t::number_float>());
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::boolean>(), std::runtime_error,
-      Catch::Message("Json is not of type boolean"));
+      Catch::Matchers::Message("Json is not of type boolean"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_int>(), std::runtime_error,
-      Catch::Message("Json is not of type number_int"));
+      Catch::Matchers::Message("Json is not of type number_int"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_uint>(), std::runtime_error,
-      Catch::Message("Json is not of type number_uint"));
+      Catch::Matchers::Message("Json is not of type number_uint"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::string>(), std::runtime_error,
-      Catch::Message("Json is not of type string"));
+      Catch::Matchers::Message("Json is not of type string"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::array>(), std::runtime_error,
-      Catch::Message("Json is not of type array"));
+      Catch::Matchers::Message("Json is not of type array"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::object>(), std::runtime_error,
-      Catch::Message("Json is not of type object"));
+      Catch::Matchers::Message("Json is not of type object"));
   }
 
   template<>
@@ -133,17 +133,17 @@ namespace
     REQUIRE(flib::json::value_t::string == object.type());
     REQUIRE(expected == object.get<flib::json::value_t::string>());
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::boolean>(), std::runtime_error,
-      Catch::Message("Json is not of type boolean"));
+      Catch::Matchers::Message("Json is not of type boolean"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_int>(), std::runtime_error,
-      Catch::Message("Json is not of type number_int"));
+      Catch::Matchers::Message("Json is not of type number_int"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_uint>(), std::runtime_error,
-      Catch::Message("Json is not of type number_uint"));
+      Catch::Matchers::Message("Json is not of type number_uint"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_float>(), std::runtime_error,
-      Catch::Message("Json is not of type number_float"));
+      Catch::Matchers::Message("Json is not of type number_float"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::array>(), std::runtime_error,
-      Catch::Message("Json is not of type array"));
+      Catch::Matchers::Message("Json is not of type array"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::object>(), std::runtime_error,
-      Catch::Message("Json is not of type object"));
+      Catch::Matchers::Message("Json is not of type object"));
   }
 
   template<>
@@ -152,17 +152,17 @@ namespace
     REQUIRE(flib::json::value_t::array == object.type());
     REQUIRE(expected == object.get<flib::json::value_t::array>());
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::boolean>(), std::runtime_error,
-      Catch::Message("Json is not of type boolean"));
+      Catch::Matchers::Message("Json is not of type boolean"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_int>(), std::runtime_error,
-      Catch::Message("Json is not of type number_int"));
+      Catch::Matchers::Message("Json is not of type number_int"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_uint>(), std::runtime_error,
-      Catch::Message("Json is not of type number_uint"));
+      Catch::Matchers::Message("Json is not of type number_uint"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_float>(), std::runtime_error,
-      Catch::Message("Json is not of type number_float"));
+      Catch::Matchers::Message("Json is not of type number_float"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::string>(), std::runtime_error,
-      Catch::Message("Json is not of type string"));
+      Catch::Matchers::Message("Json is not of type string"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::object>(), std::runtime_error,
-      Catch::Message("Json is not of type object"));
+      Catch::Matchers::Message("Json is not of type object"));
   }
 
   template<>
@@ -171,17 +171,17 @@ namespace
     REQUIRE(flib::json::value_t::object == object.type());
     REQUIRE(expected == object.get<flib::json::value_t::object>());
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::boolean>(), std::runtime_error,
-      Catch::Message("Json is not of type boolean"));
+      Catch::Matchers::Message("Json is not of type boolean"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_int>(), std::runtime_error,
-      Catch::Message("Json is not of type number_int"));
+      Catch::Matchers::Message("Json is not of type number_int"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_uint>(), std::runtime_error,
-      Catch::Message("Json is not of type number_uint"));
+      Catch::Matchers::Message("Json is not of type number_uint"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::number_float>(), std::runtime_error,
-      Catch::Message("Json is not of type number_float"));
+      Catch::Matchers::Message("Json is not of type number_float"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::string>(), std::runtime_error,
-      Catch::Message("Json is not of type string"));
+      Catch::Matchers::Message("Json is not of type string"));
     REQUIRE_THROWS_MATCHES(object.get<flib::json::value_t::array>(), std::runtime_error,
-      Catch::Message("Json is not of type array"));
+      Catch::Matchers::Message("Json is not of type array"));
   }
 }
 
