@@ -24,10 +24,13 @@ namespace flib
   //  - FLIB_NO_MEMORY_LEAK_DETECTION ....... disables memory leak detection
   //  - FLIB_NO_MEMORY_LEAK_DETECTION_NEW ... disables definition of c++ new operator for more detailed memory dump
 
-  // Memory leak detection is only available for Microsoft Visual Studio compiler and debug mode
-  // More info: https://learn.microsoft.com/en-us/cpp/c-runtime-library/find-memory-leaks-using-the-crt-library
   class memory_leak_detector
   {
+    // Memory leak detection is only available for Microsoft Visual Studio compiler and debug mode
+    // Please refer to the following documentation for memory leak detection:
+    //   - for Windows platform refer
+    //     https://learn.microsoft.com/en-us/cpp/c-runtime-library/find-memory-leaks-using-the-crt-library
+
   public:
     enum class flags
       : uint16_t
@@ -43,29 +46,29 @@ namespace flib
       check_always           = 0b100000000  // Refer to: _CRTDBG_CHECK_ALWAYS_DF
     };
 
-    static constexpr flags c_default_flags = flags::debug_heap_allocations | flags::exit_leak_check;
+    static constexpr flags s_default_flags = flags::debug_heap_allocations | flags::exit_leak_check;
 
   public:
     static void dump_leaks(void);
     static void set_allocation_break(long p_number = -1);
-    static void setup(flags p_flags = c_default_flags);
+    static void setup(flags p_flags = s_default_flags);
     static bool supported(void);
   };
 #pragma endregion
 
 #pragma region IMPLEMENTATION
 #if defined(FLIB_MEMORY_LEAK_DETECTION)
-  void memory_leak_detector::dump_leaks(void)
+  inline void memory_leak_detector::dump_leaks(void)
   {
     _CrtDumpMemoryLeaks();
   }
 
-  void memory_leak_detector::set_allocation_break(long p_number)
+  inline void memory_leak_detector::set_allocation_break(long p_number)
   {
     _CrtSetBreakAlloc(p_number);
   }
 
-  void memory_leak_detector::setup(flags p_flags)
+  inline void memory_leak_detector::setup(flags p_flags)
   {
     int internal_flags = 0;
     if (flib::is_flag_set(p_flags, flags::debug_heap_allocations))
@@ -113,24 +116,24 @@ namespace flib
     _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
   }
 
-  bool memory_leak_detector::supported(void)
+  inline bool memory_leak_detector::supported(void)
   {
     return true;
   }
 #else
-  void memory_leak_detector::dump_leaks(void)
+  inline void memory_leak_detector::dump_leaks(void)
   {
   }
 
-  void memory_leak_detector::set_allocation_break(long)
+  inline void memory_leak_detector::set_allocation_break(long)
   {
   }
 
-  void memory_leak_detector::setup(flags)
+  inline void memory_leak_detector::setup(flags)
   {
   }
 
-  bool memory_leak_detector::supported(void)
+  inline bool memory_leak_detector::supported(void)
   {
     return false;
   }

@@ -13,8 +13,8 @@
 namespace
 {
 #pragma region Helpers
-  const std::string c_hex_prefix = "";
-  const std::string c_hex_string_deliminator = " ";
+  const std::string g_hex_prefix = "";
+  const std::string g_hex_string_deliminator = " ";
 
   std::string to_string(flib::endian::reference p_value)
   {
@@ -46,9 +46,9 @@ namespace
     {
       if (!result.empty())
       {
-        result += c_hex_string_deliminator;
+        result += g_hex_string_deliminator;
       }
-      result += c_hex_prefix + ::to_hex(*it);
+      result += g_hex_prefix + ::to_hex(*it);
     }
     return result;
   }
