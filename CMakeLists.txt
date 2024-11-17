@@ -40,6 +40,7 @@ else()
     -Werror
     -Wshadow
     -Wconversion
+    -Wno-unknown-pragmas #should be removed when using gcc 13+
   )
   string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_LIST}")
 
@@ -57,5 +58,6 @@ message("***                          flib version: ${FLib_FIND_VERSION}")
 include_directories("${FLib_INCLUDE_DIRS}"
                     "${Catch2_INCLUDE_DIRS}")
                     
+add_subdirectory("${CMAKE_SOURCE_DIR}/examples")
 add_subdirectory("${CMAKE_SOURCE_DIR}/test_dll")
 add_subdirectory("${CMAKE_SOURCE_DIR}/tests")
