@@ -4,12 +4,12 @@
 set(project_name "test_dll")
 project(${project_name} DESCRIPTION "fr3nzy's test dll")
 
-source_group("/Header Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp")
-source_group("/Source Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+source_group("/Header Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp")
+source_group("/Source Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
 file(GLOB src_files
-  "${CMAKE_CURRENT_SOURCE_DIR}/*.hpp"
-  "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
 add_library(${project_name} SHARED ${src_files})
 

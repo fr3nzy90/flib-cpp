@@ -4,10 +4,12 @@
 set(project_name "mld_example")
 project(${project_name} DESCRIPTION "Memory leak detection example")
 
-source_group("/Header Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/headers/*.hpp")
+source_group("/Header Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp")
 source_group("/Source Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
-file(GLOB src_files "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
+file(GLOB src_files
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
 add_executable(${project_name} ${src_files})
 

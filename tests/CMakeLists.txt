@@ -4,12 +4,15 @@
 set(project_name "tests")
 project(${project_name} DESCRIPTION "fr3nzy's library tests")
 
-source_group("/Header Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/headers/*.hpp")
+source_group("/Header Files/Common" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/src/common/*.hpp")
 source_group("/Source Files/Common" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/src/common/*.cpp")
+source_group("/Header Files/Suites" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/src/suites/*.hpp")
 source_group("/Source Files/Suites" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/src/suites/*.cpp")
 
 file(GLOB src_files
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/common/*.hpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/common/*.cpp"
+  "${CMAKE_CURRENT_SOURCE_DIR}/src/suites/*.hpp"
   "${CMAKE_CURRENT_SOURCE_DIR}/src/suites/*.cpp")
 
 if(UNIX)
