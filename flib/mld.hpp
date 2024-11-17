@@ -45,6 +45,7 @@ namespace flib
 
     static constexpr flags c_default_flags = flags::debug_heap_allocations | flags::exit_leak_check;
 
+  public:
     static void dump_leaks(void);
     static void set_allocation_break(long p_number = -1);
     static void setup(flags p_flags = c_default_flags);
