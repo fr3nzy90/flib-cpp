@@ -12,5 +12,3 @@ file(GLOB src_files
   "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
 add_executable(${project_name} ${src_files})
-
-add_dependencies(${project_name} test_dll)
