@@ -3,7 +3,7 @@
 
 // safeguard against redefinition link issue in case of multiple header inclusion within single compilation unit
 #include <flib/atomic.hpp>
-#include <flib/binary.hpp>
+#include <flib/bit.hpp>
 #include <flib/dll.hpp>
 #include <flib/json.hpp>
 #include <flib/observable.hpp>
