@@ -14,3 +14,7 @@ file(GLOB src_files
 add_executable(${project_name} ${src_files})
 
 add_dependencies(${project_name} test_dll)
+
+if(UNIX)
+  target_link_libraries(${project_name} dl)
+endif()
