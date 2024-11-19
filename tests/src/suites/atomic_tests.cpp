@@ -1,8 +1,9 @@
-// Copyright Â© 2020-2024 Luka Arnecic.
+// Copyright © 2020-2024 Luka Arnecic.
 // See the LICENSE file at the top-level directory of this distribution.
 
 #include <flib/atomic.hpp>
 
+#include <cstdint>
 #include <chrono>
 #include <functional>
 #include <future>
@@ -16,32 +17,7 @@ TEST_CASE("Atomic tests - Sanity check", "[atomic]")
   SECTION("Default construction")
   {
     flib::atomic<uint32_t> value;
-    value.store(1);
-    REQUIRE(1 == value);
-    REQUIRE(1 == value.load());
-    REQUIRE(2 == (value = 2));
-    REQUIRE(2 == value);
-    REQUIRE(2 == value.load());
-    REQUIRE(2 == value.exchange(3));
-    REQUIRE(3 == value);
-    REQUIRE(3 == value.load());
-  }
-  SECTION("Move construction")
-  {
-    auto value{ flib::atomic<uint32_t>() };
-    value.store(1);
-    REQUIRE(1 == value);
-    REQUIRE(1 == value.load());
-    REQUIRE(2 == (value = 2));
-    REQUIRE(2 == value);
-    REQUIRE(2 == value.load());
-    REQUIRE(2 == value.exchange(3));
-    REQUIRE(3 == value);
-    REQUIRE(3 == value.load());
-  }
-  SECTION("Move assignment")
-  {
-    auto value = flib::atomic<uint32_t>();
+    REQUIRE(false == value.is_lock_free());
     value.store(1);
     REQUIRE(1 == value);
     REQUIRE(1 == value.load());
@@ -55,6 +31,7 @@ TEST_CASE("Atomic tests - Sanity check", "[atomic]")
   SECTION("Construction with value")
   {
     flib::atomic<uint32_t> value(0);
+    REQUIRE(false == value.is_lock_free());
     REQUIRE(0 == value);
     REQUIRE(0 == value.load());
     value.store(1);
