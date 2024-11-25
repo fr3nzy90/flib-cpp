@@ -56,6 +56,7 @@ namespace
         std::cout << "Hello " << p_name << " for " << sequential << "-time with " << ::to_string(p_data) << " ... lambda\n";
       };
 
+    // check if observable has any observers
     std::cout << "Observable is empty: " << std::boolalpha << observable.empty() << '\n';
 
     // subscribe class observer
