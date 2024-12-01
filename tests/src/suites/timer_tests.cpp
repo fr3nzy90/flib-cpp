@@ -31,24 +31,6 @@ TEST_CASE("Timer tests - Sanity check", "[timer]")
     timer.reschedule();
     REQUIRE(!timer.scheduled());
   }
-  SECTION("Move construction")
-  {
-    auto timer{ flib::timer() };
-    REQUIRE(!timer.scheduled());
-    timer.schedule({}, ::milliseconds(100));
-    REQUIRE(!timer.scheduled());
-    timer.reschedule();
-    REQUIRE(!timer.scheduled());
-  }
-  SECTION("Move assignment")
-  {
-    auto timer = flib::timer();
-    REQUIRE(!timer.scheduled());
-    timer.schedule({}, ::milliseconds(100));
-    REQUIRE(!timer.scheduled());
-    timer.reschedule();
-    REQUIRE(!timer.scheduled());
-  }
 }
 
 TEST_CASE("Timer tests - Timing", "[timer]")

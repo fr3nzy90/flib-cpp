@@ -1,4 +1,4 @@
-// Copyright Â© 2019-2024 Luka Arnecic.
+// Copyright © 2019-2024 Luka Arnecic.
 // See the LICENSE file at the top-level directory of this distribution.
 
 #pragma once
@@ -8,13 +8,13 @@
 #include <exception>
 #include <functional>
 #include <future>
+#include <memory>
 #include <mutex>
 #include <utility>
 
-#include <flib/pimpl.hpp>
-
 namespace flib
 {
+#pragma region API
   class timer
   {
   public:
@@ -27,15 +27,16 @@ namespace flib
       fixed_rate
     };
 
+  public:
     timer(void) = default;
     timer(const timer&) = delete;
-    timer(timer&&) = default;
+    timer(timer&&) = delete;
     ~timer(void) noexcept;
     timer& operator=(const timer&) = delete;
-    timer& operator=(timer&&) = default;
+    timer& operator=(timer&&) = delete;
     void clear(void);
     void reschedule(void);
-    void schedule(event_t event, duration_t delay, duration_t period = {}, type_t type = type_t::fixed_delay);
+    void schedule(event_t p_event, duration_t p_delay, duration_t p_period = {}, type_t p_type = type_t::fixed_delay);
     bool scheduled(void) const;
 
   private:
@@ -49,154 +50,151 @@ namespace flib
     };
 
     struct _executor;
-    struct _storage;
 
+  private:
     bool _condition_check(void) const;
-    void _init(_executor& executor);
-    void _wait(_executor& executor);
-    void _run(_executor& executor);
+    void _init(_executor& p_executor);
+    void _wait(_executor& p_executor);
+    void _run(_executor& p_executor);
 
-    pimpl<_storage> m_storage;
+  private:
+    event_t m_event;
+    duration_t m_delay{};
+    duration_t m_period{};
+    type_t m_type{ type_t::fixed_delay };
+    _state_t m_state{ _state_t::destruct };
+    _clock_t::time_point m_event_time;
+    std::unique_ptr<_executor> m_executor{ std::make_unique<timer::_executor>() };
+    std::condition_variable m_condition;
+    mutable std::mutex m_condition_mtx;
   };
+#pragma endregion
 
-  // IMPLEMENTATION
-
+#pragma region IMPLEMENTATION
   struct timer::_executor
   {
-    bool running{ false };
-    std::future<void> result;
-  };
-
-  struct timer::_storage
-  {
-    event_t event;
-    duration_t delay{};
-    duration_t period{};
-    type_t type{ type_t::fixed_delay };
-    _state_t state{ _state_t::destruct };
-    _clock_t::time_point event_time;
-    _executor executor;
-    std::condition_variable condition;
-    mutable std::mutex condition_mtx;
+    bool m_running{ false };
+    std::future<void> m_result;
   };
 
   inline timer::~timer(void) noexcept
   {
     clear();
-    _wait(m_storage->executor);
+    _wait(*m_executor);
   }
 
   inline void timer::clear(void)
   {
-    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
-    m_storage->state = _state_t::destruct;
+    std::unique_lock<std::mutex> condition_guard(m_condition_mtx);
+    m_state = _state_t::destruct;
     condition_guard.unlock();
-    m_storage->condition.notify_all();
+    m_condition.notify_all();
   }
 
   inline void timer::reschedule(void)
   {
-    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
-    if (!m_storage->event)
+    std::unique_lock<std::mutex> condition_guard(m_condition_mtx);
+    if (!m_event)
     {
       return;
     }
-    m_storage->event_time = _clock_t::now() + m_storage->delay;
-    m_storage->state = _state_t::activating;
-    _init(m_storage->executor);
+    m_event_time = _clock_t::now() + m_delay;
+    m_state = _state_t::activating;
+    _init(*m_executor);
     condition_guard.unlock();
-    m_storage->condition.notify_all();
+    m_condition.notify_all();
   }
 
-  inline void timer::schedule(event_t event, duration_t delay, duration_t period, type_t type)
+  inline void timer::schedule(event_t p_event, duration_t p_delay, duration_t p_period, type_t p_type)
   {
-    if (!event)
+    if (!p_event)
     {
       return;
     }
-    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
-    m_storage->event = std::move(event);
-    m_storage->delay = std::move(delay);
-    m_storage->period = std::move(period);
-    m_storage->type = std::move(type);
-    m_storage->event_time = _clock_t::now() + m_storage->delay;
-    m_storage->state = _state_t::activating;
-    _init(m_storage->executor);
+    std::unique_lock<std::mutex> condition_guard(m_condition_mtx);
+    m_event = std::move(p_event);
+    m_delay = std::move(p_delay);
+    m_period = std::move(p_period);
+    m_type = std::move(p_type);
+    m_event_time = _clock_t::now() + m_delay;
+    m_state = _state_t::activating;
+    _init(*m_executor);
     condition_guard.unlock();
-    m_storage->condition.notify_all();
+    m_condition.notify_all();
   }
 
   inline bool timer::scheduled(void) const
   {
-    std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx);
-    return _state_t::active == m_storage->state || _state_t::activating == m_storage->state;
+    std::unique_lock<std::mutex> condition_guard(m_condition_mtx);
+    return _state_t::active == m_state || _state_t::activating == m_state;
   }
 
   inline bool timer::_condition_check(void) const
   {
-    return _state_t::active != m_storage->state;
+    return _state_t::active != m_state;
   }
 
-  inline void timer::_init(_executor& executor)
+  inline void timer::_init(_executor& p_executor)
   {
-    if (!executor.running)
+    if (!p_executor.m_running)
     {
-      executor.running = true;
-      executor.result = std::async(std::launch::async, &timer::_run, this, std::ref(executor));
+      p_executor.m_running = true;
+      p_executor.m_result = std::async(std::launch::async, &timer::_run, this, std::ref(p_executor));
     }
   }
 
-  inline void timer::_wait(_executor& executor)
+  inline void timer::_wait(_executor& p_executor)
   {
-    if (executor.result.valid())
+    if (p_executor.m_result.valid())
     {
-      executor.result.get();
+      p_executor.m_result.get();
     }
   }
 
-  inline void timer::_run(_executor& executor)
+  inline void timer::_run(_executor& p_executor)
   {
     try
     {
       event_t event;
       _clock_t::time_point event_time;
-      std::unique_lock<std::mutex> condition_guard(m_storage->condition_mtx, std::defer_lock);
+      std::unique_lock<std::mutex> condition_guard(m_condition_mtx, std::defer_lock);
       auto scheduled_execution = [&]
-      {
-        if (m_storage->condition.wait_until(condition_guard, event_time, std::bind(&timer::_condition_check, this)))
         {
-          return false;
-        }
-        condition_guard.unlock();
-        event();
-        condition_guard.lock();
-        return !_condition_check();
-      };
+          if (m_condition.wait_until(condition_guard, event_time, std::bind(&timer::_condition_check, this)))
+          {
+            return false;
+          }
+          condition_guard.unlock();
+          event();
+          condition_guard.lock();
+          return !_condition_check();
+        };
       condition_guard.lock();
-      while (_state_t::destruct != m_storage->state)
+      while (_state_t::destruct != m_state)
       {
-        event = m_storage->event;
-        event_time = m_storage->event_time;
-        m_storage->state = _state_t::active;
+        event = m_event;
+        event_time = m_event_time;
+        m_state = _state_t::active;
         if (!scheduled_execution())
         {
           continue;
         }
-        if (duration_t{} == m_storage->period)
+        if (duration_t{} == m_period)
         {
-          m_storage->state = _state_t::destruct;
+          m_state = _state_t::destruct;
           break;
         }
         do
         {
-          event_time = (type_t::fixed_delay == m_storage->type ? _clock_t::now() : event_time) + m_storage->period;
+          event_time = (type_t::fixed_delay == m_type ? _clock_t::now() : event_time) + m_period;
         } while (scheduled_execution());
       }
-      executor.running = false;
+      p_executor.m_running = false;
     }
     catch (...)
     {
       std::terminate();
     }
   }
+#pragma endregion
 }
