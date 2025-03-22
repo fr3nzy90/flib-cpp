@@ -1,178 +1,234 @@
-// Copyright Â© 2021-2024 Luka Arnecic.
+// Copyright © 2021-2025 Luka Arnecic.
 // See the LICENSE file at the top-level directory of this distribution.
 
 #include <flib/timestamp.hpp>
 
 #include <cstdint>
 #include <chrono>
-#include <list>
-#include <ratio>
+#include <ctime>
+#include <iomanip>
 #include <regex>
-#include <stdexcept>
+#include <sstream>
 #include <string>
+#include <tuple>
 
 #include <catch2/catch2.hpp>
 
 namespace
 {
   using microseconds = std::chrono::duration<uint64_t, std::micro>;
+  using milliseconds = std::chrono::duration<uint64_t, std::milli>;
 
-  bool check_timestamp(const std::string& timestamp)
+  inline uint64_t microseconds_since_epoch(flib::timestamp::time_point_t p_timepoint)
   {
-    static const std::regex regex("^([0-9]{4})-([0-9]{2})-([0-9]{2})"
-      "([Tt]([0-9]{2}):([0-9]{2}):([0-9]{2})(\\.[0-9]+)?)?"
-      "(([Zz]|([+-])([0-9]{2}):([0-9]{2})))?$");
-    return std::regex_match(timestamp, regex);
+    return std::chrono::duration_cast<microseconds>(p_timepoint.time_since_epoch()).count();
   }
 
-  std::chrono::minutes get_offset(const std::string& timestamp)
+  inline flib::timestamp::time_point_t make_timepoint(uint64_t p_us_since_epoch)
   {
-    std::tm temp{};
-    std::istringstream stream(timestamp.substr(timestamp.size() - 5));
-    stream >> std::get_time(&temp, "%R");
-    auto offset = std::chrono::hours(temp.tm_hour) + std::chrono::minutes(temp.tm_min);
-    return '+' == timestamp.at(timestamp.size() - 6) ? offset : -offset;
+    return flib::timestamp::time_point_t() + ::microseconds(p_us_since_epoch);
+  }
+
+  inline flib::timestamp::time_point_t make_timepoint_now()
+  {
+    return make_timepoint(microseconds_since_epoch(flib::timestamp::time_point_t::clock::now()));
+  }
+
+  inline std::string to_string(flib::timestamp::time_point_t p_timepoint)
+  {
+    return std::to_string(microseconds_since_epoch(p_timepoint));
+  }
+
+  inline std::string to_string(flib::timestamp::precision p_precision)
+  {
+    switch (p_precision)
+    {
+    case flib::timestamp::precision::seconds:
+      return "seconds";
+    case flib::timestamp::precision::milliseconds:
+      return "milliseconds";
+    case flib::timestamp::precision::microseconds:
+      return "microseconds";
+    default:
+      return "unknown";
+    }
   }
 }
 
-TEST_CASE("Timestamp tests - Formatting", "[timestamp]")
+TEST_CASE("Timestamp tests - Sanity check", "[timestamp]")
 {
-  std::chrono::system_clock::time_point timepoint;
-  SECTION("1970-01-01 00:00:00")
+  SECTION("Default construction")
   {
+    flib::timestamp::time_point_t timepoint = flib::timestamp::time_point_t::clock::now();
+    flib::timestamp timestamp;
+    REQUIRE((timepoint < timestamp.get() && timestamp.get() < timepoint + ::milliseconds(100)));
   }
-  SECTION("1999-12-31 23:59:59.999999")
+  SECTION("Epoch construction")
   {
-    timepoint += ::microseconds(946684799999999);
+    flib::timestamp timestamp = flib::timestamp::epoch();
+    REQUIRE(flib::timestamp::time_point_t() == timestamp.get());
   }
-  SECTION("2000-01-01 00:00:00")
+  SECTION("Construction from custom timestamp")
   {
-    timepoint += ::microseconds(946684800000000);
+    flib::timestamp::time_point_t timepoint;
+    timepoint += ::microseconds(946684799123456);
+    flib::timestamp timestamp = flib::timestamp(timepoint);
+    REQUIRE(timepoint == timestamp.get());
   }
-  SECTION("2199-12-31 23:59:59.999999")
+  SECTION("Min precision check")
   {
-    timepoint += ::microseconds(7258118399999999);
+    REQUIRE(flib::timestamp::precision::min == flib::timestamp::precision::seconds);
   }
-  SECTION("Current time")
+  SECTION("Max precision check")
   {
-    timepoint = std::chrono::system_clock::now();
+    REQUIRE(flib::timestamp::precision::max == flib::timestamp::precision::microseconds);
   }
-  REQUIRE(::check_timestamp(flib::generate(timepoint)));
-  REQUIRE(::check_timestamp(flib::generate(timepoint, false)));
 }
 
-TEST_CASE("Timestamp tests - Generator check", "[timestamp]")
+TEST_CASE("Timestamp tests - Set value", "[timestamp]")
 {
-  std::chrono::system_clock::time_point timepoint;
+  flib::timestamp timestamp;
+  flib::timestamp::time_point_t timepoint = flib::timestamp::time_point_t::clock::now();
+  timestamp.set(timepoint);
+  REQUIRE(timepoint == timestamp.get());
+}
+
+TEST_CASE("Timestamp tests - General formatting", "[timestamp]")
+{
+  static const auto check = [](const std::string& p_timestamp)
+    {
+      static const std::regex regex("^[0-9]{4}-[0-9]{2}-[0-9]{2}"
+        "[Tt][0-9]{2}:[0-9]{2}:[0-9]{2}"
+        "(\\.[0-9]+)?"
+        "([Zz]|([+-][0-9]{2}:[0-9]{2}))$");
+      return std::regex_match(p_timestamp, regex);
+    };
+  flib::timestamp::time_point_t timepoint = GENERATE(
+    flib::timestamp::time_point_t(),
+    ::make_timepoint(946684799123456),
+    ::make_timepoint(946684800000000),
+    ::make_timepoint(7258118399123000),
+    ::make_timepoint_now());
+  INFO("Timepoint=" << ::to_string(timepoint));
+  REQUIRE(check(flib::timestamp(timepoint).to_string()));
+  REQUIRE(check(flib::timestamp(timepoint).to_string(true, flib::timestamp::precision::seconds)));
+  REQUIRE(check(flib::timestamp(timepoint).to_string(true, flib::timestamp::precision::milliseconds)));
+  REQUIRE(check(flib::timestamp(timepoint).to_string(true, flib::timestamp::precision::microseconds)));
+  REQUIRE(check(flib::timestamp(timepoint).to_string(false, flib::timestamp::precision::seconds)));
+  REQUIRE(check(flib::timestamp(timepoint).to_string(false, flib::timestamp::precision::milliseconds)));
+  REQUIRE(check(flib::timestamp(timepoint).to_string(false, flib::timestamp::precision::microseconds)));
+}
+
+TEST_CASE("Timestamp tests - Precision formatting", "[timestamp]")
+{
+  static const auto get_offset = [](const std::string& p_timestamp)
+    {
+      std::tm temp{};
+      std::istringstream stream(p_timestamp.substr(p_timestamp.size() - 5));
+      stream >> std::get_time(&temp, "%R");
+      std::chrono::minutes offset = std::chrono::hours(temp.tm_hour) + std::chrono::minutes(temp.tm_min);
+      return '+' == p_timestamp.at(p_timestamp.size() - 6) ? offset : -offset;
+    };
+  flib::timestamp::time_point_t timepoint;
+  flib::timestamp::precision precision;
   std::string utc_timestamp;
-  SECTION("1970-01-02 00:00:00")
-  {
-    timepoint += ::microseconds(86400000000);
-    utc_timestamp = "1970-01-02T00:00:00Z";
-  }
-  SECTION("1999-12-31 23:59:59.999999")
-  {
-    timepoint += ::microseconds(946684799999999);
-    utc_timestamp = "1999-12-31T23:59:59.999999Z";
-  }
-  SECTION("2000-01-01 00:00:00")
-  {
-    timepoint += ::microseconds(946684800000000);
-    utc_timestamp = "2000-01-01T00:00:00Z";
-  }
-  SECTION("2199-12-31 23:59:59.999999")
-  {
-    timepoint += ::microseconds(7258118399999999);
-    utc_timestamp = "2199-12-31T23:59:59.999999Z";
-  }
-  REQUIRE(flib::generate(timepoint) == utc_timestamp);
-  REQUIRE_THAT(flib::generate(timepoint - ::get_offset(flib::generate(timepoint, false)), false),
+  std::tie(timepoint, precision, utc_timestamp) =
+    GENERATE(table<flib::timestamp::time_point_t, flib::timestamp::precision, std::string>({
+    // 1970-01-02T00:00:00Z
+    { ::make_timepoint(86400000000),      flib::timestamp::precision::seconds,      "1970-01-02T00:00:00Z" },
+    { ::make_timepoint(86400000000),      flib::timestamp::precision::milliseconds, "1970-01-02T00:00:00Z" },
+    { ::make_timepoint(86400000000),      flib::timestamp::precision::microseconds, "1970-01-02T00:00:00Z" },
+    // 1999-12-31T23:59:59.999999Z
+    { ::make_timepoint(946684799999999),  flib::timestamp::precision::seconds,      "1999-12-31T23:59:59Z" },
+    { ::make_timepoint(946684799999999),  flib::timestamp::precision::milliseconds, "1999-12-31T23:59:59.999Z" },
+    { ::make_timepoint(946684799999999),  flib::timestamp::precision::microseconds, "1999-12-31T23:59:59.999999Z" },
+    // 2000-01-01T00:00:00Z
+    { ::make_timepoint(946684800000000),  flib::timestamp::precision::seconds,      "2000-01-01T00:00:00Z" },
+    { ::make_timepoint(946684800000000),  flib::timestamp::precision::milliseconds, "2000-01-01T00:00:00Z" },
+    { ::make_timepoint(946684800000000),  flib::timestamp::precision::microseconds, "2000-01-01T00:00:00Z" },
+    // 2199-12-31T23:59:59.999999Z
+    { ::make_timepoint(7258118399999999), flib::timestamp::precision::seconds,      "2199-12-31T23:59:59Z" },
+    { ::make_timepoint(7258118399999999), flib::timestamp::precision::milliseconds, "2199-12-31T23:59:59.999Z" },
+    { ::make_timepoint(7258118399999999), flib::timestamp::precision::microseconds, "2199-12-31T23:59:59.999999Z" }
+      }));
+  INFO("    Timepoint=" << ::to_string(timepoint));
+  INFO("    Precision=" << ::to_string(precision));
+  INFO("UTC timestamp=" << utc_timestamp);
+  REQUIRE(flib::timestamp(timepoint).to_string(true, precision) == utc_timestamp);
+  REQUIRE_THAT(flib::timestamp(timepoint - get_offset(flib::timestamp(timepoint).to_string(false))).to_string(false, precision),
     Catch::Matchers::StartsWith(utc_timestamp.substr(0, utc_timestamp.size() - 1)));
 }
 
-TEST_CASE("Timestamp tests - Parser check", "[timestamp]")
+TEST_CASE("Timestamp tests - Parsing check", "[timestamp]")
 {
-  std::chrono::system_clock::time_point timepoint;
-  std::list<std::string> timestamps;
-  SECTION("1970-01-01 00:00:00")
-  {
-    timestamps = {
-      "1969-12-31T12:00:00-12:00",
-      "1969-12-31T23:00:00-01:00",
-      "1969-12-31T23:30:00-00:30",
-      "1970-01-01T00:00:00Z",
-      "1970-01-01T00:30:00+00:30",
-      "1970-01-01T01:00:00+01:00",
-      "1970-01-01T12:00:00+12:00"
-    };
-  }
-  SECTION("1999-12-31 23:59:59.999999")
-  {
-    timepoint += ::microseconds(946684799999999);
-    timestamps = {
-      "1999-12-31T11:59:59.999999-12:00",
-      "1999-12-31T22:59:59.999999-01:00",
-      "1999-12-31T23:29:59.999999-00:30",
-      "1999-12-31T23:59:59.999999Z",
-      "2000-01-01T00:29:59.999999+00:30",
-      "2000-01-01T00:59:59.999999+01:00",
-      "2000-01-01T11:59:59.999999+12:00"
-    };
-  }
-  SECTION("2000-01-01 00:00:00")
-  {
-    timepoint += ::microseconds(946684800000000);
-    timestamps = {
-      "1999-12-31T12:00:00-12:00",
-      "1999-12-31T23:00:00-01:00",
-      "1999-12-31T23:30:00-00:30",
-      "2000-01-01T00:00:00Z",
-      "2000-01-01T00:30:00+00:30",
-      "2000-01-01T01:00:00+01:00",
-      "2000-01-01T12:00:00+12:00"
-    };
-  }
-  SECTION("2099-12-31 23:59:59.999999")
-  {
-    timepoint += ::microseconds(7258118399999999);
-    timestamps = {
-      "2199-12-31T11:59:59.999999-12:00",
-      "2199-12-31T22:59:59.999999-01:00",
-      "2199-12-31T23:29:59.999999-00:30",
-      "2199-12-31T23:59:59.999999Z",
-      "2200-01-01T00:29:59.999999+00:30",
-      "2200-01-01T00:59:59.999999+01:00",
-      "2200-01-01T11:59:59.999999+12:00"
-    };
-  }
-  for (const auto& timestamp : timestamps)
-  {
-    REQUIRE(flib::parse(timestamp) == timepoint);
-  }
+  flib::timestamp::time_point_t timepoint;
+  std::string timestamp;
+  std::tie(timepoint, timestamp) =
+    GENERATE(table<flib::timestamp::time_point_t, std::string>({
+    // precision edgecases
+    { flib::timestamp::time_point_t(),   "1970-01-01T00:00:00.Z" },
+    { flib::timestamp::time_point_t(),   "1970-01-01T00:00:00.0Z" },
+    // 1970-01-02T00:00:00Z
+    { flib::timestamp::time_point_t(),   "1969-12-31T12:00:00-12:00" },
+    { flib::timestamp::time_point_t(),   "1969-12-31T23:00:00-01:00" },
+    { flib::timestamp::time_point_t(),   "1969-12-31T23:30:00-00:30" },
+    { flib::timestamp::time_point_t(),   "1970-01-01T00:00:00Z" },
+    { flib::timestamp::time_point_t(),   "1970-01-01T00:30:00+00:30" },
+    { flib::timestamp::time_point_t(),   "1970-01-01T01:00:00+01:00" },
+    { flib::timestamp::time_point_t(),   "1970-01-01T12:00:00+12:00" },
+    // 1999-12-31T23:59:59.999999Z
+    { ::make_timepoint(946684799999999), "1999-12-31T11:59:59.999999-12:00" },
+    { ::make_timepoint(946684799999999), "1999-12-31T22:59:59.999999-01:00" },
+    { ::make_timepoint(946684799999999), "1999-12-31T23:29:59.999999-00:30" },
+    { ::make_timepoint(946684799999999), "1999-12-31T23:59:59.999999Z" },
+    { ::make_timepoint(946684799999999), "2000-01-01T00:29:59.999999+00:30" },
+    { ::make_timepoint(946684799999999), "2000-01-01T00:59:59.999999+01:00" },
+    { ::make_timepoint(946684799999999), "2000-01-01T11:59:59.999999+12:00" },
+    // 2000-01-01T00:00:00Z
+    { ::make_timepoint(946684800000000), "1999-12-31T12:00:00-12:00" },
+    { ::make_timepoint(946684800000000), "1999-12-31T23:00:00-01:00" },
+    { ::make_timepoint(946684800000000), "1999-12-31T23:30:00-00:30" },
+    { ::make_timepoint(946684800000000), "2000-01-01T00:00:00Z" },
+    { ::make_timepoint(946684800000000), "2000-01-01T00:30:00+00:30" },
+    { ::make_timepoint(946684800000000), "2000-01-01T01:00:00+01:00" },
+    { ::make_timepoint(946684800000000), "2000-01-01T12:00:00+12:00" },
+    // 2199-12-31T23:59:59.999999Z
+    { ::make_timepoint(7258118399999999), "2199-12-31T11:59:59.999999-12:00" },
+    { ::make_timepoint(7258118399999999), "2199-12-31T22:59:59.999999-01:00" },
+    { ::make_timepoint(7258118399999999), "2199-12-31T23:29:59.999999-00:30" },
+    { ::make_timepoint(7258118399999999), "2199-12-31T23:59:59.999999Z" },
+    { ::make_timepoint(7258118399999999), "2200-01-01T00:29:59.999999+00:30" },
+    { ::make_timepoint(7258118399999999), "2200-01-01T00:59:59.999999+01:00" },
+    { ::make_timepoint(7258118399999999), "2200-01-01T11:59:59.999999+12:00" }
+      }));
+  INFO("Timepoint=" << ::to_string(timepoint));
+  INFO("Timestamp=" << timestamp);
+  REQUIRE(flib::timestamp::parse(timestamp).get() == timepoint);
 }
 
-TEST_CASE("Timestamp tests - Generate-parse cycle equality", "[timestamp]")
+TEST_CASE("Timestamp tests - to_string-parse cycle check", "[timestamp]")
 {
-  std::chrono::system_clock::time_point timepoint;
-  SECTION("1970-01-01 00:00:00")
-  {
-  }
-  SECTION("1999-12-31 23:59:59.999999")
-  {
-    timepoint += ::microseconds(946684799999999);
-  }
-  SECTION("2000-01-01 00:00:00")
-  {
-    timepoint += ::microseconds(946684800000000);
-  }
-  SECTION("2199-12-31 23:59:59.999999")
-  {
-    timepoint += ::microseconds(7258118399999999);
-  }
-  SECTION("Current time")
-  {
-    timepoint += std::chrono::duration_cast<::microseconds>(std::chrono::system_clock::now().time_since_epoch());
-  }
-  REQUIRE(flib::parse(flib::generate(timepoint)) == timepoint);
-  REQUIRE(flib::parse(flib::generate(timepoint, false)) == timepoint);
+  bool utc = GENERATE(true, false);
+  flib::timestamp::time_point_t timepoint = GENERATE(
+    flib::timestamp::time_point_t(),
+    ::make_timepoint(86400000000),
+    ::make_timepoint(946684799999999),
+    ::make_timepoint(946684799123456),
+    ::make_timepoint(946684800000000),
+    ::make_timepoint(7258118399123000),
+    ::make_timepoint(7258118399999999),
+    ::make_timepoint_now());
+  INFO("Timepoint=" << ::to_string(timepoint));
+  REQUIRE(timepoint == flib::timestamp::parse(flib::timestamp(timepoint).to_string(utc, flib::timestamp::precision::max)).get());
+}
+
+TEST_CASE("Timestamp tests - parse-to_string cycle check", "[timestamp]")
+{
+  std::string timestamp = GENERATE(
+    "1970-01-01T00:00:00Z",
+    "1999-12-31T23:59:59.999999Z",
+    "2000-01-01T00:00:00Z",
+    "2199-12-31T23:59:59.999999Z");
+  INFO("UTC timestamp=" << timestamp);
+  REQUIRE(timestamp == flib::timestamp::parse(timestamp).to_string(true, flib::timestamp::precision::max));
 }
