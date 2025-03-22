@@ -1,4 +1,4 @@
-// Copyright © 2019-2024 Luka Arnecic.
+// Copyright © 2019-2025 Luka Arnecic.
 // See the LICENSE file at the top-level directory of this distribution.
 
 #pragma once
@@ -21,7 +21,7 @@ namespace flib
     using duration_t = std::chrono::nanoseconds;
     using event_t = std::function<void(void)>;
 
-    enum class type_t
+    enum class type
     {
       fixed_delay,
       fixed_rate
@@ -36,13 +36,13 @@ namespace flib
     timer& operator=(timer&&) = delete;
     void clear(void);
     void reschedule(void);
-    void schedule(event_t p_event, duration_t p_delay, duration_t p_period = {}, type_t p_type = type_t::fixed_delay);
+    void schedule(event_t p_event, duration_t p_delay, duration_t p_period = {}, type p_type = type::fixed_delay);
     bool scheduled(void) const;
 
   private:
     using _clock_t = std::chrono::steady_clock;
 
-    enum class _state_t
+    enum class _state
     {
       activating,
       active,
@@ -61,8 +61,8 @@ namespace flib
     event_t m_event;
     duration_t m_delay{};
     duration_t m_period{};
-    type_t m_type{ type_t::fixed_delay };
-    _state_t m_state{ _state_t::destruct };
+    type m_type{ type::fixed_delay };
+    _state m_state{ _state::destruct };
     _clock_t::time_point m_event_time;
     std::unique_ptr<_executor> m_executor{ std::make_unique<timer::_executor>() };
     std::condition_variable m_condition;
@@ -86,7 +86,7 @@ namespace flib
   inline void timer::clear(void)
   {
     std::unique_lock<std::mutex> condition_guard(m_condition_mtx);
-    m_state = _state_t::destruct;
+    m_state = _state::destruct;
     condition_guard.unlock();
     m_condition.notify_all();
   }
@@ -99,13 +99,13 @@ namespace flib
       return;
     }
     m_event_time = _clock_t::now() + m_delay;
-    m_state = _state_t::activating;
+    m_state = _state::activating;
     _init(*m_executor);
     condition_guard.unlock();
     m_condition.notify_all();
   }
 
-  inline void timer::schedule(event_t p_event, duration_t p_delay, duration_t p_period, type_t p_type)
+  inline void timer::schedule(event_t p_event, duration_t p_delay, duration_t p_period, type p_type)
   {
     if (!p_event)
     {
@@ -117,7 +117,7 @@ namespace flib
     m_period = std::move(p_period);
     m_type = std::move(p_type);
     m_event_time = _clock_t::now() + m_delay;
-    m_state = _state_t::activating;
+    m_state = _state::activating;
     _init(*m_executor);
     condition_guard.unlock();
     m_condition.notify_all();
@@ -126,12 +126,12 @@ namespace flib
   inline bool timer::scheduled(void) const
   {
     std::unique_lock<std::mutex> condition_guard(m_condition_mtx);
-    return _state_t::active == m_state || _state_t::activating == m_state;
+    return _state::active == m_state || _state::activating == m_state;
   }
 
   inline bool timer::_condition_check(void) const
   {
-    return _state_t::active != m_state;
+    return _state::active != m_state;
   }
 
   inline void timer::_init(_executor& p_executor)
@@ -170,23 +170,23 @@ namespace flib
           return !_condition_check();
         };
       condition_guard.lock();
-      while (_state_t::destruct != m_state)
+      while (_state::destruct != m_state)
       {
         event = m_event;
         event_time = m_event_time;
-        m_state = _state_t::active;
+        m_state = _state::active;
         if (!scheduled_execution())
         {
           continue;
         }
         if (duration_t{} == m_period)
         {
-          m_state = _state_t::destruct;
+          m_state = _state::destruct;
           break;
         }
         do
         {
-          event_time = (type_t::fixed_delay == m_type ? _clock_t::now() : event_time) + m_period;
+          event_time = (type::fixed_delay == m_type ? _clock_t::now() : event_time) + m_period;
         } while (scheduled_execution());
       }
       p_executor.m_running = false;

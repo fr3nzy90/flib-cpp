@@ -1,4 +1,4 @@
-// Copyright © 2024 Luka Arnecic.
+// Copyright © 2024-2025 Luka Arnecic.
 // See the LICENSE file at the top-level directory of this distribution.
 
 #include <chrono>
@@ -94,7 +94,7 @@ namespace
     watch.reset();
 
     // schedule event to be executed in 200ms with fixed delay repeats every 100ms
-    timer.schedule(event, ::milliseconds(200), ::milliseconds(100), flib::timer::type_t::fixed_delay);
+    timer.schedule(event, ::milliseconds(200), ::milliseconds(100), flib::timer::type::fixed_delay);
 
     // check if timer is scheduled
     std::cout << "Timer scheduled: " << std::boolalpha << timer.scheduled() << '\n';
@@ -124,7 +124,7 @@ namespace
     watch.reset();
 
     // schedule event to be executed in 200ms with fixed rate repeats every 100ms
-    timer.schedule(event, ::milliseconds(200), ::milliseconds(100), flib::timer::type_t::fixed_rate);
+    timer.schedule(event, ::milliseconds(200), ::milliseconds(100), flib::timer::type::fixed_rate);
 
     // check if timer is scheduled
     std::cout << "Timer scheduled: " << std::boolalpha << timer.scheduled() << '\n';

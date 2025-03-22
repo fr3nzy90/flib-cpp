@@ -74,7 +74,7 @@ TEST_CASE("Timer tests - Timing", "[timer]")
       ++reference;
       ::sleep_for(::milliseconds(100));
     };
-    timer.schedule(event, ::milliseconds(0), ::milliseconds(100), flib::timer::type_t::fixed_delay);
+    timer.schedule(event, ::milliseconds(0), ::milliseconds(100), flib::timer::type::fixed_delay);
     ::sleep_for(::milliseconds(50));
     REQUIRE(timer.scheduled());
     REQUIRE(1 == reference);
@@ -97,7 +97,7 @@ TEST_CASE("Timer tests - Timing", "[timer]")
       ++reference;
       ::sleep_for(::milliseconds(100));
     };
-    timer.schedule(event, ::milliseconds(100), ::milliseconds(100), flib::timer::type_t::fixed_delay);
+    timer.schedule(event, ::milliseconds(100), ::milliseconds(100), flib::timer::type::fixed_delay);
     REQUIRE(timer.scheduled());
     ::sleep_for(::milliseconds(50));
     REQUIRE(timer.scheduled());
@@ -124,7 +124,7 @@ TEST_CASE("Timer tests - Timing", "[timer]")
       ++reference;
       ::sleep_for(::milliseconds(100));
     };
-    timer.schedule(event, ::milliseconds(0), ::milliseconds(100), flib::timer::type_t::fixed_rate);
+    timer.schedule(event, ::milliseconds(0), ::milliseconds(100), flib::timer::type::fixed_rate);
     ::sleep_for(::milliseconds(50));
     REQUIRE(timer.scheduled());
     REQUIRE(1 == reference);
@@ -141,7 +141,7 @@ TEST_CASE("Timer tests - Timing", "[timer]")
       ++reference;
       ::sleep_for(::milliseconds(50));
     };
-    timer.schedule(event, ::milliseconds(100), ::milliseconds(100), flib::timer::type_t::fixed_rate);
+    timer.schedule(event, ::milliseconds(100), ::milliseconds(100), flib::timer::type::fixed_rate);
     REQUIRE(timer.scheduled());
     ::sleep_for(::milliseconds(50));
     REQUIRE(timer.scheduled());
@@ -185,7 +185,7 @@ TEST_CASE("Timer tests - Cancellation", "[timer]")
       ++reference;
       ::sleep_for(::milliseconds(100));
     };
-    timer.schedule(event, ::milliseconds(0), ::milliseconds(100), flib::timer::type_t::fixed_rate);
+    timer.schedule(event, ::milliseconds(0), ::milliseconds(100), flib::timer::type::fixed_rate);
     REQUIRE(timer.scheduled());
     ::sleep_for(::milliseconds(50));
     REQUIRE(timer.scheduled());
