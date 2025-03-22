@@ -82,6 +82,24 @@ namespace
     // print timestamp
     std::cout << timestamp.to_string(true, flib::timestamp::precision::max) << '\n';
   }
+
+  void example_timestamp_alternative(void)
+  {
+    // create timestamp with current timepoint
+    auto timestamp = flib::timestamp();
+
+    // convert timestamp to UTC timestamp with second precision using alternative syntax
+    std::cout << flib::to_string(timestamp) << '\n';
+
+    // convert timestamp to local timestamp with second precision using alternative syntax
+    std::cout << flib::to_string(timestamp, false) << '\n';
+
+    // convert timestamp to UTC timestamp with millisecond precision using alternative syntax
+    std::cout << flib::to_string(timestamp, true, flib::timestamp::precision::milliseconds) << '\n';
+
+    // convert timestamp to local timestamp with microsecond precision using alternative syntax
+    std::cout << flib::to_string(timestamp, false, flib::timestamp::precision::microseconds) << '\n';
+  }
 #pragma endregion
 }
 
@@ -94,6 +112,7 @@ int main(int /*argc*/, char* /*argv*/[])
   ::example_simple_timestamp_usage();
   ::example_timestamp_parsing();
   ::example_timestamp_reset();
+  ::example_timestamp_alternative();
 
   return 0;
 }

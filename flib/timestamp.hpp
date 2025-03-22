@@ -59,6 +59,8 @@ namespace flib
   private:
     time_point_t m_timepoint;
   };
+
+  std::string to_string(const timestamp& p_timestamp, bool p_utc = true, timestamp::precision p_precision = timestamp::precision::min);
 #pragma endregion
 
 #pragma region IMPLEMENTATION
@@ -253,6 +255,11 @@ namespace flib
   inline std::chrono::microseconds timestamp::_get_microseconds(const std::string& p_duration)
   {
     return std::chrono::microseconds(p_duration.empty() ? 0 : std::stoul(p_duration));
+  }
+
+  inline std::string to_string(const timestamp& p_timestamp, bool p_utc, timestamp::precision p_precision)
+  {
+    return p_timestamp.to_string(p_utc, p_precision);
   }
 #pragma endregion
 }

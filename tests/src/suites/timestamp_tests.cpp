@@ -72,7 +72,7 @@ TEST_CASE("Timestamp tests - Sanity check", "[timestamp]")
   {
     flib::timestamp::time_point_t timepoint;
     timepoint += ::microseconds(946684799123456);
-    flib::timestamp timestamp = flib::timestamp(timepoint);
+    flib::timestamp timestamp(timepoint);
     REQUIRE(timepoint == timestamp.get());
   }
   SECTION("Min precision check")
@@ -109,14 +109,22 @@ TEST_CASE("Timestamp tests - General formatting", "[timestamp]")
     ::make_timepoint(946684800000000),
     ::make_timepoint(7258118399123000),
     ::make_timepoint_now());
+  flib::timestamp timestamp(timepoint);
   INFO("Timepoint=" << ::to_string(timepoint));
-  REQUIRE(check(flib::timestamp(timepoint).to_string()));
-  REQUIRE(check(flib::timestamp(timepoint).to_string(true, flib::timestamp::precision::seconds)));
-  REQUIRE(check(flib::timestamp(timepoint).to_string(true, flib::timestamp::precision::milliseconds)));
-  REQUIRE(check(flib::timestamp(timepoint).to_string(true, flib::timestamp::precision::microseconds)));
-  REQUIRE(check(flib::timestamp(timepoint).to_string(false, flib::timestamp::precision::seconds)));
-  REQUIRE(check(flib::timestamp(timepoint).to_string(false, flib::timestamp::precision::milliseconds)));
-  REQUIRE(check(flib::timestamp(timepoint).to_string(false, flib::timestamp::precision::microseconds)));
+  REQUIRE(check(timestamp.to_string()));
+  REQUIRE(check(timestamp.to_string(true, flib::timestamp::precision::seconds)));
+  REQUIRE(check(timestamp.to_string(true, flib::timestamp::precision::milliseconds)));
+  REQUIRE(check(timestamp.to_string(true, flib::timestamp::precision::microseconds)));
+  REQUIRE(check(timestamp.to_string(false, flib::timestamp::precision::seconds)));
+  REQUIRE(check(timestamp.to_string(false, flib::timestamp::precision::milliseconds)));
+  REQUIRE(check(timestamp.to_string(false, flib::timestamp::precision::microseconds)));
+  REQUIRE(check(flib::to_string(timestamp)));
+  REQUIRE(check(flib::to_string(timestamp, true, flib::timestamp::precision::seconds)));
+  REQUIRE(check(flib::to_string(timestamp, true, flib::timestamp::precision::milliseconds)));
+  REQUIRE(check(flib::to_string(timestamp, true, flib::timestamp::precision::microseconds)));
+  REQUIRE(check(flib::to_string(timestamp, false, flib::timestamp::precision::seconds)));
+  REQUIRE(check(flib::to_string(timestamp, false, flib::timestamp::precision::milliseconds)));
+  REQUIRE(check(flib::to_string(timestamp, false, flib::timestamp::precision::microseconds)));
 }
 
 TEST_CASE("Timestamp tests - Precision formatting", "[timestamp]")
@@ -151,11 +159,15 @@ TEST_CASE("Timestamp tests - Precision formatting", "[timestamp]")
     { ::make_timepoint(7258118399999999), flib::timestamp::precision::milliseconds, "2199-12-31T23:59:59.999Z" },
     { ::make_timepoint(7258118399999999), flib::timestamp::precision::microseconds, "2199-12-31T23:59:59.999999Z" }
       }));
+  flib::timestamp timestamp(timepoint);
   INFO("    Timepoint=" << ::to_string(timepoint));
   INFO("    Precision=" << ::to_string(precision));
   INFO("UTC timestamp=" << utc_timestamp);
-  REQUIRE(flib::timestamp(timepoint).to_string(true, precision) == utc_timestamp);
-  REQUIRE_THAT(flib::timestamp(timepoint - get_offset(flib::timestamp(timepoint).to_string(false))).to_string(false, precision),
+  REQUIRE(timestamp.to_string(true, precision) == utc_timestamp);
+  REQUIRE(flib::to_string(timestamp, true, precision) == utc_timestamp);
+  REQUIRE_THAT(flib::timestamp(timepoint - get_offset(timestamp.to_string(false))).to_string(false, precision),
+    Catch::Matchers::StartsWith(utc_timestamp.substr(0, utc_timestamp.size() - 1)));
+  REQUIRE_THAT(flib::to_string(flib::timestamp(timepoint - get_offset(flib::to_string(timestamp, false))), false, precision),
     Catch::Matchers::StartsWith(utc_timestamp.substr(0, utc_timestamp.size() - 1)));
 }
 
@@ -218,8 +230,10 @@ TEST_CASE("Timestamp tests - to_string-parse cycle check", "[timestamp]")
     ::make_timepoint(7258118399123000),
     ::make_timepoint(7258118399999999),
     ::make_timepoint_now());
+  flib::timestamp timestamp(timepoint);
   INFO("Timepoint=" << ::to_string(timepoint));
-  REQUIRE(timepoint == flib::timestamp::parse(flib::timestamp(timepoint).to_string(utc, flib::timestamp::precision::max)).get());
+  REQUIRE(timepoint == flib::timestamp::parse(timestamp.to_string(utc, flib::timestamp::precision::max)).get());
+  REQUIRE(timepoint == flib::timestamp::parse(flib::to_string(timestamp, utc, flib::timestamp::precision::max)).get());
 }
 
 TEST_CASE("Timestamp tests - parse-to_string cycle check", "[timestamp]")
@@ -231,4 +245,5 @@ TEST_CASE("Timestamp tests - parse-to_string cycle check", "[timestamp]")
     "2199-12-31T23:59:59.999999Z");
   INFO("UTC timestamp=" << timestamp);
   REQUIRE(timestamp == flib::timestamp::parse(timestamp).to_string(true, flib::timestamp::precision::max));
+  REQUIRE(timestamp == flib::to_string(flib::timestamp::parse(timestamp), true, flib::timestamp::precision::max));
 }
