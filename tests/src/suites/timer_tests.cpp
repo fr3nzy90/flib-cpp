@@ -1,4 +1,4 @@
-// Copyright © 2019-2024 Luka Arnecic.
+// Copyright © 2019-2025 Luka Arnecic.
 // See the LICENSE file at the top-level directory of this distribution.
 
 #include <flib/timer.hpp>
@@ -14,9 +14,9 @@ namespace
 {
   using milliseconds = std::chrono::duration<uint64_t, std::milli>;
 
-  inline void sleep_for(const ::milliseconds& duration)
+  inline void sleep_for(const ::milliseconds& p_duration)
   {
-    std::this_thread::sleep_until(std::chrono::high_resolution_clock::now() + duration);
+    std::this_thread::sleep_until(std::chrono::high_resolution_clock::now() + p_duration);
   }
 }
 
