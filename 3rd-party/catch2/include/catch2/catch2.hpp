@@ -1,4 +1,4 @@
-// Copyright © 2024 Luka Arnecic.
+// Copyright © 2024-2025 Luka Arnecic.
 // See the LICENSE file at the top-level directory of this distribution.
 
 #pragma once
@@ -8,7 +8,7 @@
 #  pragma warning(disable: 4003)
 #endif
 
-#include "../../v3.7.1/catch2/catch_amalgamated.hpp"
+#include "../../v3.8.0/catch2/catch_amalgamated.hpp"
 
 #ifdef _MSC_VER
 #  pragma warning(default: 4003)
