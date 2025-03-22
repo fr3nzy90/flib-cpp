@@ -1,8 +1,8 @@
-# Copyright © 2024 Luka Arnecic.
+# Copyright © 2024-2025 Luka Arnecic.
 # See the LICENSE file at the top-level directory of this distribution.
 
 set(project_name "timer_example")
-project(${project_name} DESCRIPTION "TImer usage example")
+project(${project_name} DESCRIPTION "Timer usage example")
 
 source_group("/Header Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp")
 source_group("/Source Files" REGULAR_EXPRESSION "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
