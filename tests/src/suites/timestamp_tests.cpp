@@ -83,6 +83,13 @@ TEST_CASE("Timestamp tests - Sanity check", "[timestamp]")
   {
     REQUIRE(flib::timestamp::precision::max == flib::timestamp::precision::microseconds);
   }
+  SECTION("Equality check")
+  {
+    REQUIRE(flib::timestamp::epoch() == flib::timestamp::epoch());
+    flib::timestamp::time_point_t timepoint = flib::timestamp::time_point_t::clock::now();
+    REQUIRE(flib::timestamp(timepoint) == flib::timestamp(timepoint));
+    REQUIRE_FALSE(flib::timestamp(timepoint) == flib::timestamp::epoch());
+  }
 }
 
 TEST_CASE("Timestamp tests - Set value", "[timestamp]")
@@ -232,8 +239,12 @@ TEST_CASE("Timestamp tests - to_string-parse cycle check", "[timestamp]")
     ::make_timepoint_now());
   flib::timestamp timestamp(timepoint);
   INFO("Timepoint=" << ::to_string(timepoint));
-  REQUIRE(timepoint == flib::timestamp::parse(timestamp.to_string(utc, flib::timestamp::precision::max)).get());
-  REQUIRE(timepoint == flib::timestamp::parse(flib::to_string(timestamp, utc, flib::timestamp::precision::max)).get());
+  flib::timestamp parsed_timestamp_utc = flib::timestamp::parse(timestamp.to_string(utc, flib::timestamp::precision::max));
+  flib::timestamp parsed_timestamp_local = flib::timestamp::parse(flib::to_string(timestamp, utc, flib::timestamp::precision::max));
+  REQUIRE(timepoint == parsed_timestamp_utc.get());
+  REQUIRE(timestamp == parsed_timestamp_utc);
+  REQUIRE(timepoint == parsed_timestamp_local.get());
+  REQUIRE(timestamp == parsed_timestamp_local);
 }
 
 TEST_CASE("Timestamp tests - parse-to_string cycle check", "[timestamp]")

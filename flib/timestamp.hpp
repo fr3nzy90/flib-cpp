@@ -37,6 +37,8 @@ namespace flib
 
   public:
     explicit timestamp(time_point_t p_timepoint = time_point_t::clock::now());
+    bool operator==(const timestamp& p_obj) const;
+    bool operator!=(const timestamp& p_obj) const;
     time_point_t get(void) const;
     void set(time_point_t p_timepoint = time_point_t::clock::now());
     std::string to_string(bool p_utc = true, precision p_precision = precision::min) const;
@@ -80,6 +82,16 @@ namespace flib
   inline timestamp::timestamp(time_point_t p_timepoint)
     : m_timepoint{ std::move(p_timepoint) }
   {
+  }
+
+  inline bool timestamp::operator==(const timestamp& p_obj) const
+  {
+    return m_timepoint == p_obj.m_timepoint;
+  }
+
+  inline bool timestamp::operator!=(const timestamp& p_obj) const
+  {
+    return !(*this == p_obj);
   }
 
   inline timestamp::time_point_t timestamp::get(void) const

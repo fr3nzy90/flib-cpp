@@ -32,6 +32,10 @@ namespace
 
     // convert timestamp to UTC timestamp with second precision
     std::cout << timestamp.to_string() << '\n';
+
+    // check if timestamp is equal to epoch
+    std::cout << (timestamp == flib::timestamp::epoch()) << '\n';
+    std::cout << (timestamp != flib::timestamp::epoch()) << '\n';
   }
 
   void example_timestamp_parsing(void)
