@@ -147,8 +147,7 @@ TEST_CASE("Timestamp tests - Precision formatting", "[timestamp]")
   flib::timestamp::time_point_t timepoint;
   flib::timestamp::precision precision;
   std::string utc_timestamp;
-  std::tie(timepoint, precision, utc_timestamp) =
-    GENERATE(table<flib::timestamp::time_point_t, flib::timestamp::precision, std::string>({
+  std::tie(timepoint, precision, utc_timestamp) = GENERATE(table<flib::timestamp::time_point_t, flib::timestamp::precision, std::string>({
     // 1970-01-02T00:00:00Z
     { ::make_timepoint(86400000000),      flib::timestamp::precision::seconds,      "1970-01-02T00:00:00Z" },
     { ::make_timepoint(86400000000),      flib::timestamp::precision::milliseconds, "1970-01-02T00:00:00Z" },
@@ -164,8 +163,7 @@ TEST_CASE("Timestamp tests - Precision formatting", "[timestamp]")
     // 2199-12-31T23:59:59.999999Z
     { ::make_timepoint(7258118399999999), flib::timestamp::precision::seconds,      "2199-12-31T23:59:59Z" },
     { ::make_timepoint(7258118399999999), flib::timestamp::precision::milliseconds, "2199-12-31T23:59:59.999Z" },
-    { ::make_timepoint(7258118399999999), flib::timestamp::precision::microseconds, "2199-12-31T23:59:59.999999Z" }
-      }));
+    { ::make_timepoint(7258118399999999), flib::timestamp::precision::microseconds, "2199-12-31T23:59:59.999999Z" }}));
   flib::timestamp timestamp(timepoint);
   INFO("    Timepoint=" << ::to_string(timepoint));
   INFO("    Precision=" << ::to_string(precision));
@@ -182,8 +180,7 @@ TEST_CASE("Timestamp tests - Parsing check", "[timestamp]")
 {
   flib::timestamp::time_point_t timepoint;
   std::string timestamp;
-  std::tie(timepoint, timestamp) =
-    GENERATE(table<flib::timestamp::time_point_t, std::string>({
+  std::tie(timepoint, timestamp) = GENERATE(table<flib::timestamp::time_point_t, std::string>({
     // precision edgecases
     { flib::timestamp::time_point_t(),   "1970-01-01T00:00:00.Z" },
     { flib::timestamp::time_point_t(),   "1970-01-01T00:00:00.0Z" },
@@ -218,8 +215,7 @@ TEST_CASE("Timestamp tests - Parsing check", "[timestamp]")
     { ::make_timepoint(7258118399999999), "2199-12-31T23:59:59.999999Z" },
     { ::make_timepoint(7258118399999999), "2200-01-01T00:29:59.999999+00:30" },
     { ::make_timepoint(7258118399999999), "2200-01-01T00:59:59.999999+01:00" },
-    { ::make_timepoint(7258118399999999), "2200-01-01T11:59:59.999999+12:00" }
-      }));
+    { ::make_timepoint(7258118399999999), "2200-01-01T11:59:59.999999+12:00" }}));
   INFO("Timepoint=" << ::to_string(timepoint));
   INFO("Timestamp=" << timestamp);
   REQUIRE(flib::timestamp::parse(timestamp).get() == timepoint);
