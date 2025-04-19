@@ -1,4 +1,4 @@
-// Copyright © 2020-2024 Luka Arnecic.
+// Copyright © 2020-2025 Luka Arnecic.
 // See the LICENSE file at the top-level directory of this distribution.
 
 #pragma once
@@ -7,10 +7,10 @@
 #define FLIB_VERSION_MAJOR 0
 
 // Library minor version - max 999
-#define FLIB_VERSION_MINOR 7
+#define FLIB_VERSION_MINOR 8
 
 // Library patch version - max 99
-#define FLIB_VERSION_PATCH 2
+#define FLIB_VERSION_PATCH 0
 
 // Library version represented with a single number
 //
