@@ -1,4 +1,4 @@
-// Copyright © 2019-2024 Luka Arnecic.
+// Copyright © 2019-2025 Luka Arnecic.
 // See the LICENSE file at the top-level directory of this distribution.
 
 #include <flib/worker.hpp>
@@ -14,9 +14,9 @@ namespace
 {
   using milliseconds = std::chrono::duration<uint64_t, std::milli>;
 
-  inline void sleep_for(const ::milliseconds& duration)
+  inline void sleep_for(const ::milliseconds& p_duration)
   {
-    std::this_thread::sleep_until(std::chrono::high_resolution_clock::now() + duration);
+    std::this_thread::sleep_until(std::chrono::high_resolution_clock::now() + p_duration);
   }
 }
 
@@ -25,22 +25,6 @@ TEST_CASE("Worker tests - Sanity check", "[worker]")
   SECTION("Default construction")
   {
     flib::worker worker;
-    REQUIRE(worker.enabled());
-    REQUIRE(1 == worker.executors());
-    REQUIRE(worker.empty());
-    REQUIRE(0 == worker.size());
-  }
-  SECTION("Move construction")
-  {
-    auto worker{ flib::worker() };
-    REQUIRE(worker.enabled());
-    REQUIRE(1 == worker.executors());
-    REQUIRE(worker.empty());
-    REQUIRE(0 == worker.size());
-  }
-  SECTION("Move assignment")
-  {
-    auto worker = flib::worker();
     REQUIRE(worker.enabled());
     REQUIRE(1 == worker.executors());
     REQUIRE(worker.empty());
