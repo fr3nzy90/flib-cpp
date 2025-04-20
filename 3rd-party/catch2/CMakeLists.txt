@@ -32,7 +32,7 @@ add_library(${project_name} STATIC ${src_files})
 
  # disable cartain compiler warnings only for this project
 if(MSVC)
-  target_compile_options(${project_name} PRIVATE "/wd4003;")
+  target_compile_options(${project_name} PRIVATE "/wd4003;/wd4324;")
 else()
   target_compile_options(${project_name} PRIVATE -Wno-conversion)
 endif()
