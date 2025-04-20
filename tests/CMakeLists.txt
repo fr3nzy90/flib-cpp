@@ -32,3 +32,5 @@ endif()
 
 add_custom_command(TARGET ${project_name} POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy "$<TARGET_FILE:${test_dll}>" "$<TARGET_FILE_DIR:${project_name}>")
+
+catch_discover_tests(${project_name})
