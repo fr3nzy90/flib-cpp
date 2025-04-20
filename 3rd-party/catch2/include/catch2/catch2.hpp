@@ -8,7 +8,7 @@
 #  pragma warning(disable: 4003)
 #endif
 
-#include "../../v3.8.0/catch2/catch_amalgamated.hpp"
+#include "../3rd-party/v3.8.1/catch_amalgamated.hpp"
 
 #ifdef _MSC_VER
 #  pragma warning(default: 4003)

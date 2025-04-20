@@ -6,14 +6,14 @@
 
 // SPDX-License-Identifier: BSL-1.0
 
-//  Catch v3.8.0
-//  Generated: 2025-01-06 00:39:54.679994
+//  Catch v3.8.1
+//  Generated: 2025-04-08 12:33:19.863332
 //  ----------------------------------------------------------
 //  This file is an amalgamation of multiple different files.
 //  You probably shouldn't edit it directly.
 //  ----------------------------------------------------------
 
-#include <catch2/catch_amalgamated.hpp>
+#include "catch_amalgamated.hpp"
 
 
 #ifndef CATCH_WINDOWS_H_PROXY_HPP_INCLUDED
@@ -2283,7 +2283,7 @@ namespace Catch {
     }
 
     Version const& libraryVersion() {
-        static Version version( 3, 8, 0, "", 0 );
+        static Version version( 3, 8, 1, "", 0 );
         return version;
     }
 
