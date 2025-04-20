@@ -30,6 +30,7 @@ else()
     -Werror
     -Wshadow
     -Wconversion
+    -Wno-invalid-utf8
     -Wno-unknown-pragmas #should be removed when using gcc 13+
   )
   string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_LIST}")

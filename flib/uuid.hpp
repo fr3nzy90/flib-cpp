@@ -82,7 +82,8 @@ namespace flib
     data_t set_bits;
     _set_version(data, set_bits, 7u);
     _set_variant(data, set_bits, 2u);
-    std::bitset<48> timestamp_data = std::chrono::duration_cast<std::chrono::milliseconds>(p_timepoint.time_since_epoch()).count();
+    std::bitset<48> timestamp_data(
+      static_cast<unsigned long long>(std::chrono::duration_cast<std::chrono::milliseconds>(p_timepoint.time_since_epoch()).count()));
     for (std::size_t i = 0; i < 48; ++i)
     {
       _set(data, set_bits, i, timestamp_data[47 - i]);
