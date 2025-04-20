@@ -1,19 +1,9 @@
-# Copyright © 2019-2024 Luka Arnecic.
+# Copyright © 2019-2025 Luka Arnecic.
 # See the LICENSE file at the top-level directory of this distribution.
 
 cmake_minimum_required(VERSION 3.8)
 
 project("fr3nzy's library solution")
-
-if(DEFINED OUTPUT_DIRECTORY)
-  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_DIRECTORY}")
-  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_DIRECTORY}")
-  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_DIRECTORY}")
-
-  message("*** CMAKE_ARCHIVE_OUTPUT_DIRECTORY set to: ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
-  message("*** CMAKE_LIBRARY_OUTPUT_DIRECTORY set to: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}")
-  message("*** CMAKE_RUNTIME_OUTPUT_DIRECTORY set to: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
-endif()
 
 if(MSVC)
   list(APPEND CMAKE_CXX_FLAGS_LIST

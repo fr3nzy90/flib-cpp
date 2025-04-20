@@ -1,0 +1,146 @@
+{
+  "version": 5,
+  "configurePresets": [
+    {
+      "name": "windows-base",
+      "description": "Target Windows with the Visual Studio development environment.",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/out/build/${presetName}",
+      "installDir": "${sourceDir}/out/bin/${presetName}",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "windows-x64-debug",
+      "displayName": "Windows x64 Debug",
+      "description": "Target Windows (64-bit) with the Visual Studio development environment. (Debug)",
+      "inherits": "windows-base",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "intelliSenseMode": "windows-msvc-x64"
+        }
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "windows-x64-release",
+      "displayName": "Windows x64 MinSizeRel",
+      "description": "Target Windows (64-bit) with the Visual Studio development environment. (MinSizeRel)",
+      "inherits": "windows-x64-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+    {
+      "name": "windows-x86-debug",
+      "displayName": "Windows x86 Debug",
+      "description": "Target Windows (32-bit) with the Visual Studio development environment. (Debug)",
+      "inherits": "windows-base",
+      "architecture": {
+        "value": "x86",
+        "strategy": "external"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "intelliSenseMode": "windows-msvc-x86"
+        }
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "windows-x86-release",
+      "displayName": "Windows x86 MinSizeRel",
+      "description": "Target Windows (32-bit) with the Visual Studio development environment. (MinSizeRel)",
+      "inherits": "windows-x86-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+    {
+      "name": "linux-base",
+      "description": "Target the Windows Subsystem for Linux (WSL) or a remote Linux system.",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}out/build/${presetName}",
+      "installDir": "${sourceDir}out/bin/${presetName}",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioRemoteSettings/CMake/2.0": {
+          "remoteSourceRootDir": "$env{HOME}/$ms{projectDirName}",
+          "copyExcludeDirectoriesList": [ ".vs", ".git", "cmake", "out" ],
+          "copyBuildOutput": true
+        }
+      }
+    },
+    {
+      "name": "linux-x64-debug",
+      "displayName": "Linux x64 Debug",
+      "description": "Target the Windows Subsystem for Linux (WSL) or a remote Linux system (64-bit). (Debug)",
+      "inherits": "linux-base",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "intelliSenseMode": "linux-gcc-x64"
+        }
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "linux-x64-release",
+      "displayName": "Linux x64 MinSizeRel",
+      "description": "Target the Windows Subsystem for Linux (WSL) or a remote Linux system (64-bit). (MinSizeRel)",
+      "inherits": "linux-x64-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    },
+    {
+      "name": "linux-x86-debug",
+      "displayName": "Linux x86 Debug",
+      "description": "Target the Windows Subsystem for Linux (WSL) or a remote Linux system (32-bit). (Debug)",
+      "inherits": "linux-base",
+      "architecture": {
+        "value": "x86",
+        "strategy": "external"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "intelliSenseMode": "linux-gcc-x86"
+        }
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "linux-x86-release",
+      "displayName": "Linux x86 MinSizeRel",
+      "description": "Target the Windows Subsystem for Linux (WSL) or a remote Linux system (32-bit). (MinSizeRel)",
+      "inherits": "linux-x86-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "MinSizeRel"
+      }
+    }
+  ]
+}
