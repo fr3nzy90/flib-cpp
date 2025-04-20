@@ -59,9 +59,10 @@ TEST_CASE("Timestamp tests - Sanity check", "[timestamp]")
 {
   SECTION("Default construction")
   {
-    flib::timestamp::time_point_t timepoint = flib::timestamp::time_point_t::clock::now();
+    flib::timestamp::time_point_t timepoint_before = flib::timestamp::time_point_t::clock::now();
     flib::timestamp timestamp;
-    REQUIRE((timepoint < timestamp.get() && timestamp.get() < timepoint + ::milliseconds(100)));
+    flib::timestamp::time_point_t timepoint_after = flib::timestamp::time_point_t::clock::now();
+    REQUIRE((timepoint_before <= timestamp.get() && timestamp.get() <= timepoint_after));
   }
   SECTION("Epoch construction")
   {
