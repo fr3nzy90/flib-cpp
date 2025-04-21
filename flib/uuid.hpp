@@ -212,10 +212,10 @@ namespace flib
       result[i] = mapping[m_data[j] * 8 + m_data[j + 1] * 4 + m_data[j + 2] * 2 + m_data[j + 3]];
     }
     result
-      .insert(20, "-")
-      .insert(16, "-")
-      .insert(12, "-")
-      .insert(8, "-");
+      .insert(20, "-", 1)
+      .insert(16, "-", 1)
+      .insert(12, "-", 1)
+      .insert(8, "-", 1);
     return result;
   }
 

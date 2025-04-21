@@ -19,20 +19,38 @@ if(MSVC)
   
   message("***                CMAKE_CXX_FLAGS set to: ${CMAKE_CXX_FLAGS}")
 else()
-  list(APPEND CMAKE_CXX_FLAGS_LIST
-    -std=c++14
-    -fPIE
-    -fvisibility=hidden
-    -pipe
-    -Wpedantic
-    -Wall
-    -Wextra
-    -Werror
-    -Wshadow
-    -Wconversion
-    -Wno-invalid-utf8
-    -Wno-unknown-pragmas #should be removed when using gcc 13+
-  )
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    list(APPEND CMAKE_CXX_FLAGS_LIST
+      -std=c++14
+      -fPIE
+      -fvisibility=hidden
+      -pipe
+      -Wpedantic
+      -Wall
+      -Wextra
+      -Werror
+      -Wshadow
+      -Wconversion
+      -Wno-unknown-warning-option
+      -Wno-invalid-utf8
+      -Wno-unknown-pragmas
+    )
+  elseif (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    list(APPEND CMAKE_CXX_FLAGS_LIST
+      -std=c++14
+      -fPIE
+      -fvisibility=hidden
+      -pipe
+      -Wpedantic
+      -Wall
+      -Wextra
+      -Werror
+      -Wshadow
+      -Wconversion
+      -Wno-unknown-pragmas
+    )
+  endif()
+
   string(REPLACE ";" " " CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS_LIST}")
 
   set(CMAKE_EXE_LINKER_FLAGS "-Wl,-O1,-pie,--as-needed,--fatal-warnings,-rpath,.")
