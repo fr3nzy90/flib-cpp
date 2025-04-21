@@ -6,7 +6,7 @@ jobs:
   build:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
         os: [windows-2019, windows-2022, windows-2025, windows-latest]
         platform: [Win32, x64]
