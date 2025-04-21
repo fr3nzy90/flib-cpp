@@ -204,6 +204,7 @@ namespace flib
   {
     static constexpr char mapping_lower[] = { '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
     static constexpr char mapping_upper[] = { '0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F' };
+    static const std::string separator("-");
     const char* mapping = p_uppercase ? mapping_upper : mapping_lower;
     std::string result("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx");
     result.reserve(result.size() + 4);
@@ -212,10 +213,10 @@ namespace flib
       result[i] = mapping[m_data[j] * 8 + m_data[j + 1] * 4 + m_data[j + 2] * 2 + m_data[j + 3]];
     }
     result
-      .insert(20, "-", 1)
-      .insert(16, "-", 1)
-      .insert(12, "-", 1)
-      .insert(8, "-", 1);
+      .insert(20, separator)
+      .insert(16, separator)
+      .insert(12, separator)
+      .insert(8, separator);
     return result;
   }
 
