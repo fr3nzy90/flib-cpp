@@ -1,6 +1,14 @@
 name: Windows builds
 
-on: [push, pull_request]
+on:
+  push:
+    tags:
+      - '*'
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:

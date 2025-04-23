@@ -1,0 +1,63 @@
+name: Linux builds
+
+on:
+  push:
+    tags:
+      - '*'
+    branches-ignore:
+      - main
+  pull_request:
+    branches-ignore:
+      - main
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+        build_type: [Debug, Release]
+        cpp_compiler: [g++-9, g++-10, g++-11, g++-12, g++-13, g++-14, clang++-14, clang++-15, clang++-16, clang++-17, clang++-18]
+        std: [14, 17, 20]
+        exclude:
+          - os: ubuntu-22.04
+            cpp_compiler: g++-13
+          - os: ubuntu-22.04
+            cpp_compiler: g++-14
+          - os: ubuntu-22.04
+            cpp_compiler: clang++-16
+          - os: ubuntu-22.04
+            cpp_compiler: clang++-17
+          - os: ubuntu-22.04
+            cpp_compiler: clang++-18
+          - os: ubuntu-24.04
+            cpp_compiler: g++-9
+          - os: ubuntu-24.04
+            cpp_compiler: g++-10
+          - os: ubuntu-24.04
+            cpp_compiler: g++-11
+          - os: ubuntu-24.04
+            cpp_compiler: clang++-14
+          - os: ubuntu-24.04
+            cpp_compiler: clang++-15
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure CMake
+      run: >
+        cmake -B ${{runner.workspace}}/build
+        -DCMAKE_CXX_STANDARD=${{matrix.std}}
+        -DCMAKE_CXX_STANDARD_REQUIRED=ON
+        -DCMAKE_CXX_EXTENSIONS=OFF
+        -DCMAKE_CXX_COMPILER=${{matrix.cpp_compiler}}
+        -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+        -S ${{github.workspace}}
+
+    - name: Build
+      run: cmake --build ${{runner.workspace}}/build --config ${{ matrix.build_type }}
+
+    - name: Test
+      working-directory: ${{runner.workspace}}/build
+      run: ctest --build-config ${{matrix.build_type}} --output-on-failure

@@ -1,0 +1,45 @@
+name: Windows builds
+
+on:
+  push:
+    tags:
+      - '*'
+    branches-ignore:
+      - main
+  pull_request:
+    branches-ignore:
+      - main
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [windows-2019, windows-2022, windows-2025]
+        platform: [Win32, x64]
+        build_type: [Debug, Release]
+        std: [14, 17, 20]
+        exclude:
+          - os: windows-2019
+            std: 20
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure CMake
+      run: >
+        cmake -B ${{runner.workspace}}/build
+        -DCMAKE_CXX_STANDARD=${{matrix.std}}
+        -DCMAKE_CXX_COMPILER=${{matrix.cpp_compiler}}
+        -DCMAKE_C_COMPILER=${{matrix.c_compiler}}
+        -DCMAKE_BUILD_TYPE=${{matrix.build_type}}
+        -A ${{matrix.platform}} 
+        -S ${{github.workspace}}
+
+    - name: Build
+      run: cmake --build ${{runner.workspace}}/build --config ${{ matrix.build_type }}
+
+    - name: Test
+      working-directory: ${{runner.workspace}}/build
+      run: ctest --build-config ${{matrix.build_type}} --output-on-failure
