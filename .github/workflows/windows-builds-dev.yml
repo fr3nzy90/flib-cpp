@@ -5,10 +5,10 @@ on:
     tags:
       - '*'
     branches-ignore:
-      - main
+      - master
   pull_request:
     branches-ignore:
-      - main
+      - master
 
 jobs:
   build:
