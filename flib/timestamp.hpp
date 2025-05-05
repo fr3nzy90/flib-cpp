@@ -37,13 +37,14 @@ namespace flib
 
   public:
     explicit timestamp(time_point_t p_timepoint = time_point_t::clock::now());
-    bool operator==(const timestamp& p_obj) const;
-    bool operator!=(const timestamp& p_obj) const;
-    time_point_t get(void) const;
-    void set(time_point_t p_timepoint = time_point_t::clock::now());
-    std::string to_string(bool p_utc = true, precision p_precision = precision::min) const;
+    virtual ~timestamp(void) noexcept = default;
+    virtual bool operator==(const timestamp& p_obj) const;
+    virtual bool operator!=(const timestamp& p_obj) const;
+    virtual time_point_t get(void) const;
+    virtual void set(time_point_t p_timepoint = time_point_t::clock::now());
+    virtual std::string to_string(bool p_utc = true, precision p_precision = precision::min) const;
 
-  private:
+  protected:
     static void _insert_subseconds(std::string p_subseconds, std::string& p_timestamp);
     static std::string _extract_microseconds(std::string& p_timestamp);
     static std::string _get_timestamp(bool p_utc, const time_point_t& p_timepoint);
@@ -58,7 +59,7 @@ namespace flib
     static std::chrono::minutes _get_timezone_offset(const std::string& p_timestamp);
     static std::chrono::microseconds _get_microseconds(const std::string& p_duration);
 
-  private:
+  protected:
     time_point_t m_timepoint;
   };
 

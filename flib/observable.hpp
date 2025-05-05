@@ -6,7 +6,6 @@
 #include <cstddef>
 #include <functional>
 #include <memory>
-#include <mutex>
 #include <set>
 #include <utility>
 
@@ -19,19 +18,20 @@ namespace flib
   {
   public:
     observable_subscription(void) = default;
-    bool expired(void) const;
-    void unsubscribe(void);
+    virtual ~observable_subscription(void) noexcept = default;
+    virtual bool expired(void) const;
+    virtual void unsubscribe(void);
 
-  private:
+  protected:
     friend observable_base;
 
-  private:
+  protected:
     using token_t = std::weak_ptr<void>;
 
-  private:
+  protected:
     observable_subscription(observable_base& p_owner, token_t p_token);
 
-  private:
+  protected:
     observable_base* m_owner{ nullptr };
     token_t m_token;
   };
@@ -42,7 +42,7 @@ namespace flib
     using size_t = std::size_t;
 
   public:
-    virtual ~observable_base(void) = default;
+    virtual ~observable_base(void) noexcept = default;
     virtual void clear(void);
     virtual bool empty(void) const;
     virtual bool owner(const observable_subscription& p_subscription) const;
@@ -64,8 +64,9 @@ namespace flib
     using observer_t = std::function<void(Args...)>;
 
   public:
-    void publish(Args... p_args) const;
-    observable_subscription subscribe(observer_t p_observer);
+    virtual ~observable(void) noexcept = default;
+    virtual void publish(Args... p_args) const;
+    virtual observable_subscription subscribe(observer_t p_observer);
   };
 #pragma endregion
 
@@ -86,7 +87,7 @@ namespace flib
 
   inline observable_subscription::observable_subscription(observable_base& p_owner, token_t p_token)
     : m_owner(&p_owner),
-    m_token(p_token)
+    m_token(std::move(p_token))
   {
   }
 
@@ -123,8 +124,7 @@ namespace flib
   template<class ...Args>
   inline void observable<Args...>::publish(Args... p_args) const
   {
-    auto subscriptions = m_subscriptions;
-    for (const auto& subscription : subscriptions)
+    for (const auto& subscription : m_subscriptions)
     {
       (*std::static_pointer_cast<observer_t>(subscription))(p_args...);
     }

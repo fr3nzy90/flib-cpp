@@ -48,24 +48,24 @@ namespace flib
     dll(const std::string& p_filepath, int64_t p_flags = s_default_flags);
     dll(const dll&) = delete;
     dll(dll&&) = delete;
-    ~dll(void);
-    dll& operator=(const dll&) = delete;
-    dll& operator=(dll&&) = delete;
-    std::string filepath(void) const;
-    int64_t flags(void) const;
+    virtual ~dll(void);
+    virtual dll& operator=(const dll&) = delete;
+    virtual dll& operator=(dll&&) = delete;
+    virtual std::string filepath(void) const;
+    virtual int64_t flags(void) const;
     template<class T>
     std::function<T> get_function(const std::string& p_name) const;
-    void load(const std::string& p_filepath, int64_t p_flags = s_default_flags);
-    bool loaded(void) const;
-    void unload(void);
+    virtual void load(const std::string& p_filepath, int64_t p_flags = s_default_flags);
+    virtual bool loaded(void) const;
+    virtual void unload(void);
 
-  private:
+  protected:
     template<class T>
     std::function<T> _get_function_unchecked(const std::string& p_name) const;
-    void _load_unchecked(const std::string& p_filepath, int64_t p_flags);
-    void _unload_unchecked(void);
+    virtual void _load_unchecked(const std::string& p_filepath, int64_t p_flags);
+    virtual void _unload_unchecked(void);
 
-  private:
+  protected:
 #if defined(_WIN32)
     HMODULE m_handle_win{ NULL };
 #elif defined(__linux__)

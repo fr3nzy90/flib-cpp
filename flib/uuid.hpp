@@ -33,22 +33,23 @@ namespace flib
 
   public:
     explicit uuid(data_t p_data = {});
-    bool operator==(const uuid& p_obj) const;
-    bool operator!=(const uuid& p_obj) const;
-    data_t get_data(void) const;
-    uint8_t get_version(void) const;
-    uint8_t get_variant(void) const;
-    void set_data(data_t p_data);
-    std::string to_string(bool p_uppercase = false) const;
-    bool valid(void) const;
+    virtual ~uuid(void) noexcept = default;
+    virtual bool operator==(const uuid& p_obj) const;
+    virtual bool operator!=(const uuid& p_obj) const;
+    virtual data_t get_data(void) const;
+    virtual uint8_t get_version(void) const;
+    virtual uint8_t get_variant(void) const;
+    virtual void set_data(data_t p_data);
+    virtual std::string to_string(bool p_uppercase = false) const;
+    virtual bool valid(void) const;
 
-  private:
+  protected:
     static void _fill_random(data_t& p_data, data_t& p_set_bits, std::size_t p_start = 0);
     static void _set(data_t& p_data, data_t& p_set_bits, std::size_t p_index, bool p_value);
     static void _set_version(data_t& p_data, data_t& p_set_bits, uint8_t p_version);
     static void _set_variant(data_t& p_data, data_t& p_set_bits, uint8_t p_variant);
 
-  private:
+  protected:
     data_t m_data;
   };
 
