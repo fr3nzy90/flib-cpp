@@ -8,6 +8,7 @@
 #include <functional>
 #include <future>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <utility>
 
@@ -67,9 +68,8 @@ TEST_CASE("Atomic tests - Wait and notify", "[atomic]")
 {
   SECTION("Wait and notify_one")
   {
-    bool result = false;
     flib::atomic<uint32_t> value(0);
-    auto task = std::async(std::launch::async, [&result, &value]
+    auto task = std::async(std::launch::async, [&value]
       {
         return value.wait(not_equal_to(0));
       });
@@ -82,14 +82,12 @@ TEST_CASE("Atomic tests - Wait and notify", "[atomic]")
   }
   SECTION("Wait and notify_all")
   {
-    bool result1 = false;
-    bool result2 = false;
     flib::atomic<uint32_t> value(0);
-    auto task1 = std::async(std::launch::async, [&result1, &value]
+    auto task1 = std::async(std::launch::async, [&value]
       {
         return value.wait(not_equal_to(0));
       });
-    auto task2 = std::async(std::launch::async, [&result2, &value]
+    auto task2 = std::async(std::launch::async, [&value]
       {
         return value.wait(not_equal_to(0));
       });
