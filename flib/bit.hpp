@@ -66,7 +66,7 @@ namespace flib
 #pragma region IMPLEMENTATION
   inline endian::reference endian::native(void)
   {
-    static const endian::reference result = []()
+    static const endian::reference result = []
       {
         uint32_t temp = 0x76543210ul;
         return static_cast<endian::reference>(reinterpret_cast<uint8_t*>(&temp)[0]);

@@ -9,11 +9,11 @@
 #include <flib/mld.hpp>
 #include <flib/timer.hpp>
 
+using namespace std::chrono_literals;
+
 namespace
 {
 #pragma region Helpers
-  using milliseconds = std::chrono::milliseconds;
-
   class EventTime
   {
   private:
@@ -34,14 +34,14 @@ namespace
     clock::time_point m_start_time{ clock::now() };
   };
 
-  void sleep_for(const ::milliseconds& p_duration)
+  void sleep_for(const std::chrono::nanoseconds& p_duration)
   {
     std::this_thread::sleep_until(std::chrono::high_resolution_clock::now() + p_duration);
   }
 
-  flib::timer::event_t create_timer_event(::EventTime& p_watch, ::milliseconds p_duration = ::milliseconds(0))
+  flib::timer::event_t create_timer_event(::EventTime& p_watch, std::chrono::nanoseconds p_duration = 0s)
   {
-    return [&p_watch, p_duration]()
+    return [&p_watch, p_duration]
       {
         std::cout << "Event triggered " << p_watch.elapsed_ms() << " since start\n";
 
@@ -67,13 +67,13 @@ namespace
     watch.reset();
 
     // schedule event to be executed in 200ms without repeats
-    timer.schedule(event, ::milliseconds(200));
+    timer.schedule(event, 200ms);
 
     // check if timer is scheduled
     std::cout << "Timer scheduled: " << std::boolalpha << timer.scheduled() << '\n';
 
     // wait for 500ms
-    ::sleep_for(::milliseconds(500));
+    ::sleep_for(500ms);
 
     // check if timer is scheduled
     std::cout << "Timer scheduled: " << std::boolalpha << timer.scheduled() << '\n';
@@ -86,7 +86,7 @@ namespace
 
     // create example related objects and event
     ::EventTime watch;
-    auto event = create_timer_event(watch, ::milliseconds(75));
+    auto event = create_timer_event(watch, 75ms);
 
     // check if timer is scheduled
     std::cout << "Timer scheduled: " << std::boolalpha << timer.scheduled() << '\n';
@@ -94,13 +94,13 @@ namespace
     watch.reset();
 
     // schedule event to be executed in 200ms with fixed delay repeats every 100ms
-    timer.schedule(event, ::milliseconds(200), ::milliseconds(100), flib::timer::type::fixed_delay);
+    timer.schedule(event, 200ms, 100ms, flib::timer::type::fixed_delay);
 
     // check if timer is scheduled
     std::cout << "Timer scheduled: " << std::boolalpha << timer.scheduled() << '\n';
 
     // wait for 500ms
-    ::sleep_for(::milliseconds(500));
+    ::sleep_for(500ms);
 
     // clear timer ... unschedules any scheduled executions
     timer.clear();
@@ -116,7 +116,7 @@ namespace
 
     // create example related objects and event
     ::EventTime watch;
-    auto event = create_timer_event(watch, ::milliseconds(75));
+    auto event = create_timer_event(watch, 75ms);
 
     // check if timer is scheduled
     std::cout << "Timer scheduled: " << std::boolalpha << timer.scheduled() << '\n';
@@ -124,13 +124,13 @@ namespace
     watch.reset();
 
     // schedule event to be executed in 200ms with fixed rate repeats every 100ms
-    timer.schedule(event, ::milliseconds(200), ::milliseconds(100), flib::timer::type::fixed_rate);
+    timer.schedule(event, 200ms, 100ms, flib::timer::type::fixed_rate);
 
     // check if timer is scheduled
     std::cout << "Timer scheduled: " << std::boolalpha << timer.scheduled() << '\n';
 
     // wait for 500ms
-    ::sleep_for(::milliseconds(500));
+    ::sleep_for(500ms);
 
     // clear timer ... unschedules any scheduled executions
     timer.clear();
@@ -154,13 +154,13 @@ namespace
     watch.reset();
 
     // schedule event to be executed in 200ms without repeats
-    timer.schedule(event, ::milliseconds(200));
+    timer.schedule(event, 200ms);
 
     // check if timer is scheduled
     std::cout << "Timer scheduled: " << std::boolalpha << timer.scheduled() << '\n';
 
     // wait for 500ms
-    ::sleep_for(::milliseconds(500));
+    ::sleep_for(500ms);
 
     // check if timer is scheduled
     std::cout << "Timer scheduled: " << std::boolalpha << timer.scheduled() << '\n';
@@ -172,7 +172,7 @@ namespace
     std::cout << "Timer scheduled: " << std::boolalpha << timer.scheduled() << '\n';
 
     // wait for 500ms
-    ::sleep_for(::milliseconds(500));
+    ::sleep_for(500ms);
 
     // check if timer is scheduled
     std::cout << "Timer scheduled: " << std::boolalpha << timer.scheduled() << '\n';

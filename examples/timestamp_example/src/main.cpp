@@ -7,6 +7,8 @@
 #include <flib/mld.hpp>
 #include <flib/timestamp.hpp>
 
+using namespace std::chrono_literals;
+
 namespace
 {
 #pragma region Examples
@@ -75,7 +77,7 @@ namespace
     std::cout << timestamp.to_string(true, flib::timestamp::precision::max) << '\n';
 
     // advance timestamp 1 hour
-    timestamp.set(timestamp.get() + std::chrono::seconds(3600));
+    timestamp.set(timestamp.get() + 1h);
 
     // print timestamp
     std::cout << timestamp.to_string(true, flib::timestamp::precision::max) << '\n';

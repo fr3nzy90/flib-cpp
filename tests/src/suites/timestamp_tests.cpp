@@ -3,7 +3,6 @@
 
 #include <flib/timestamp.hpp>
 
-#include <cstdint>
 #include <chrono>
 #include <ctime>
 #include <iomanip>
@@ -14,19 +13,18 @@
 
 #include <catch2/catch2.hpp>
 
+using namespace std::chrono_literals;
+
 namespace
 {
-  using microseconds = std::chrono::duration<uint64_t, std::micro>;
-  using milliseconds = std::chrono::duration<uint64_t, std::milli>;
-
-  inline uint64_t microseconds_since_epoch(flib::timestamp::time_point_t p_timepoint)
+  inline std::chrono::microseconds microseconds_since_epoch(flib::timestamp::time_point_t p_timepoint)
   {
-    return std::chrono::duration_cast<microseconds>(p_timepoint.time_since_epoch()).count();
+    return std::chrono::duration_cast<std::chrono::microseconds>(p_timepoint.time_since_epoch());
   }
 
-  inline flib::timestamp::time_point_t make_timepoint(uint64_t p_us_since_epoch)
+  inline flib::timestamp::time_point_t make_timepoint(std::chrono::microseconds p_us_since_epoch)
   {
-    return flib::timestamp::time_point_t() + ::microseconds(p_us_since_epoch);
+    return flib::timestamp::time_point_t() + p_us_since_epoch;
   }
 
   inline flib::timestamp::time_point_t make_timepoint_now()
@@ -36,7 +34,7 @@ namespace
 
   inline std::string to_string(flib::timestamp::time_point_t p_timepoint)
   {
-    return std::to_string(microseconds_since_epoch(p_timepoint));
+    return std::to_string(microseconds_since_epoch(p_timepoint).count());
   }
 
   inline std::string to_string(flib::timestamp::precision p_precision)
@@ -72,7 +70,7 @@ TEST_CASE("Timestamp tests - Sanity check", "[timestamp]")
   SECTION("Construction from custom timestamp")
   {
     flib::timestamp::time_point_t timepoint;
-    timepoint += ::microseconds(946684799123456);
+    timepoint += 946684799123456us;
     flib::timestamp timestamp(timepoint);
     REQUIRE(timepoint == timestamp.get());
   }
@@ -113,9 +111,9 @@ TEST_CASE("Timestamp tests - General formatting", "[timestamp]")
     };
   flib::timestamp::time_point_t timepoint = GENERATE(
     flib::timestamp::time_point_t(),
-    ::make_timepoint(946684799123456),
-    ::make_timepoint(946684800000000),
-    ::make_timepoint(7258118399123000),
+    ::make_timepoint(946684799123456us),
+    ::make_timepoint(946684800000000us),
+    ::make_timepoint(7258118399123000us),
     ::make_timepoint_now());
   flib::timestamp timestamp(timepoint);
   INFO("Timepoint=" << ::to_string(timepoint));
@@ -150,21 +148,21 @@ TEST_CASE("Timestamp tests - Precision formatting", "[timestamp]")
   std::string utc_timestamp;
   std::tie(timepoint, precision, utc_timestamp) = GENERATE(table<flib::timestamp::time_point_t, flib::timestamp::precision, std::string>({
     // 1970-01-02T00:00:00Z
-    { ::make_timepoint(86400000000),      flib::timestamp::precision::seconds,      "1970-01-02T00:00:00Z" },
-    { ::make_timepoint(86400000000),      flib::timestamp::precision::milliseconds, "1970-01-02T00:00:00Z" },
-    { ::make_timepoint(86400000000),      flib::timestamp::precision::microseconds, "1970-01-02T00:00:00Z" },
+    { ::make_timepoint(86400000000us),      flib::timestamp::precision::seconds,      "1970-01-02T00:00:00Z" },
+    { ::make_timepoint(86400000000us),      flib::timestamp::precision::milliseconds, "1970-01-02T00:00:00Z" },
+    { ::make_timepoint(86400000000us),      flib::timestamp::precision::microseconds, "1970-01-02T00:00:00Z" },
     // 1999-12-31T23:59:59.999999Z
-    { ::make_timepoint(946684799999999),  flib::timestamp::precision::seconds,      "1999-12-31T23:59:59Z" },
-    { ::make_timepoint(946684799999999),  flib::timestamp::precision::milliseconds, "1999-12-31T23:59:59.999Z" },
-    { ::make_timepoint(946684799999999),  flib::timestamp::precision::microseconds, "1999-12-31T23:59:59.999999Z" },
+    { ::make_timepoint(946684799999999us),  flib::timestamp::precision::seconds,      "1999-12-31T23:59:59Z" },
+    { ::make_timepoint(946684799999999us),  flib::timestamp::precision::milliseconds, "1999-12-31T23:59:59.999Z" },
+    { ::make_timepoint(946684799999999us),  flib::timestamp::precision::microseconds, "1999-12-31T23:59:59.999999Z" },
     // 2000-01-01T00:00:00Z
-    { ::make_timepoint(946684800000000),  flib::timestamp::precision::seconds,      "2000-01-01T00:00:00Z" },
-    { ::make_timepoint(946684800000000),  flib::timestamp::precision::milliseconds, "2000-01-01T00:00:00Z" },
-    { ::make_timepoint(946684800000000),  flib::timestamp::precision::microseconds, "2000-01-01T00:00:00Z" },
+    { ::make_timepoint(946684800000000us),  flib::timestamp::precision::seconds,      "2000-01-01T00:00:00Z" },
+    { ::make_timepoint(946684800000000us),  flib::timestamp::precision::milliseconds, "2000-01-01T00:00:00Z" },
+    { ::make_timepoint(946684800000000us),  flib::timestamp::precision::microseconds, "2000-01-01T00:00:00Z" },
     // 2199-12-31T23:59:59.999999Z
-    { ::make_timepoint(7258118399999999), flib::timestamp::precision::seconds,      "2199-12-31T23:59:59Z" },
-    { ::make_timepoint(7258118399999999), flib::timestamp::precision::milliseconds, "2199-12-31T23:59:59.999Z" },
-    { ::make_timepoint(7258118399999999), flib::timestamp::precision::microseconds, "2199-12-31T23:59:59.999999Z" }}));
+    { ::make_timepoint(7258118399999999us), flib::timestamp::precision::seconds,      "2199-12-31T23:59:59Z" },
+    { ::make_timepoint(7258118399999999us), flib::timestamp::precision::milliseconds, "2199-12-31T23:59:59.999Z" },
+    { ::make_timepoint(7258118399999999us), flib::timestamp::precision::microseconds, "2199-12-31T23:59:59.999999Z" }}));
   flib::timestamp timestamp(timepoint);
   INFO("    Timepoint=" << ::to_string(timepoint));
   INFO("    Precision=" << ::to_string(precision));
@@ -194,29 +192,29 @@ TEST_CASE("Timestamp tests - Parsing check", "[timestamp]")
     { flib::timestamp::time_point_t(),   "1970-01-01T01:00:00+01:00" },
     { flib::timestamp::time_point_t(),   "1970-01-01T12:00:00+12:00" },
     // 1999-12-31T23:59:59.999999Z
-    { ::make_timepoint(946684799999999), "1999-12-31T11:59:59.999999-12:00" },
-    { ::make_timepoint(946684799999999), "1999-12-31T22:59:59.999999-01:00" },
-    { ::make_timepoint(946684799999999), "1999-12-31T23:29:59.999999-00:30" },
-    { ::make_timepoint(946684799999999), "1999-12-31T23:59:59.999999Z" },
-    { ::make_timepoint(946684799999999), "2000-01-01T00:29:59.999999+00:30" },
-    { ::make_timepoint(946684799999999), "2000-01-01T00:59:59.999999+01:00" },
-    { ::make_timepoint(946684799999999), "2000-01-01T11:59:59.999999+12:00" },
+    { ::make_timepoint(946684799999999us), "1999-12-31T11:59:59.999999-12:00" },
+    { ::make_timepoint(946684799999999us), "1999-12-31T22:59:59.999999-01:00" },
+    { ::make_timepoint(946684799999999us), "1999-12-31T23:29:59.999999-00:30" },
+    { ::make_timepoint(946684799999999us), "1999-12-31T23:59:59.999999Z" },
+    { ::make_timepoint(946684799999999us), "2000-01-01T00:29:59.999999+00:30" },
+    { ::make_timepoint(946684799999999us), "2000-01-01T00:59:59.999999+01:00" },
+    { ::make_timepoint(946684799999999us), "2000-01-01T11:59:59.999999+12:00" },
     // 2000-01-01T00:00:00Z
-    { ::make_timepoint(946684800000000), "1999-12-31T12:00:00-12:00" },
-    { ::make_timepoint(946684800000000), "1999-12-31T23:00:00-01:00" },
-    { ::make_timepoint(946684800000000), "1999-12-31T23:30:00-00:30" },
-    { ::make_timepoint(946684800000000), "2000-01-01T00:00:00Z" },
-    { ::make_timepoint(946684800000000), "2000-01-01T00:30:00+00:30" },
-    { ::make_timepoint(946684800000000), "2000-01-01T01:00:00+01:00" },
-    { ::make_timepoint(946684800000000), "2000-01-01T12:00:00+12:00" },
+    { ::make_timepoint(946684800000000us), "1999-12-31T12:00:00-12:00" },
+    { ::make_timepoint(946684800000000us), "1999-12-31T23:00:00-01:00" },
+    { ::make_timepoint(946684800000000us), "1999-12-31T23:30:00-00:30" },
+    { ::make_timepoint(946684800000000us), "2000-01-01T00:00:00Z" },
+    { ::make_timepoint(946684800000000us), "2000-01-01T00:30:00+00:30" },
+    { ::make_timepoint(946684800000000us), "2000-01-01T01:00:00+01:00" },
+    { ::make_timepoint(946684800000000us), "2000-01-01T12:00:00+12:00" },
     // 2199-12-31T23:59:59.999999Z
-    { ::make_timepoint(7258118399999999), "2199-12-31T11:59:59.999999-12:00" },
-    { ::make_timepoint(7258118399999999), "2199-12-31T22:59:59.999999-01:00" },
-    { ::make_timepoint(7258118399999999), "2199-12-31T23:29:59.999999-00:30" },
-    { ::make_timepoint(7258118399999999), "2199-12-31T23:59:59.999999Z" },
-    { ::make_timepoint(7258118399999999), "2200-01-01T00:29:59.999999+00:30" },
-    { ::make_timepoint(7258118399999999), "2200-01-01T00:59:59.999999+01:00" },
-    { ::make_timepoint(7258118399999999), "2200-01-01T11:59:59.999999+12:00" }}));
+    { ::make_timepoint(7258118399999999us), "2199-12-31T11:59:59.999999-12:00" },
+    { ::make_timepoint(7258118399999999us), "2199-12-31T22:59:59.999999-01:00" },
+    { ::make_timepoint(7258118399999999us), "2199-12-31T23:29:59.999999-00:30" },
+    { ::make_timepoint(7258118399999999us), "2199-12-31T23:59:59.999999Z" },
+    { ::make_timepoint(7258118399999999us), "2200-01-01T00:29:59.999999+00:30" },
+    { ::make_timepoint(7258118399999999us), "2200-01-01T00:59:59.999999+01:00" },
+    { ::make_timepoint(7258118399999999us), "2200-01-01T11:59:59.999999+12:00" }}));
   INFO("Timepoint=" << ::to_string(timepoint));
   INFO("Timestamp=" << timestamp);
   REQUIRE(flib::timestamp::parse(timestamp).get() == timepoint);
@@ -227,12 +225,12 @@ TEST_CASE("Timestamp tests - to_string-parse cycle check", "[timestamp]")
   bool utc = GENERATE(true, false);
   flib::timestamp::time_point_t timepoint = GENERATE(
     flib::timestamp::time_point_t(),
-    ::make_timepoint(86400000000),
-    ::make_timepoint(946684799999999),
-    ::make_timepoint(946684799123456),
-    ::make_timepoint(946684800000000),
-    ::make_timepoint(7258118399123000),
-    ::make_timepoint(7258118399999999),
+    ::make_timepoint(86400000000us),
+    ::make_timepoint(946684799999999us),
+    ::make_timepoint(946684799123456us),
+    ::make_timepoint(946684800000000us),
+    ::make_timepoint(7258118399123000us),
+    ::make_timepoint(7258118399999999us),
     ::make_timepoint_now());
   flib::timestamp timestamp(timepoint);
   INFO("Timepoint=" << ::to_string(timepoint));

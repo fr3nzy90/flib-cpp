@@ -10,12 +10,12 @@
 #include <flib/mld.hpp>
 #include <flib/worker.hpp>
 
+using namespace std::chrono_literals;
+
 namespace
 {
 #pragma region Helpers
-  using milliseconds = std::chrono::duration<uint64_t, std::milli>;
-
-  void sleep_for(const ::milliseconds& p_duration)
+  void sleep_for(const std::chrono::nanoseconds& p_duration)
   {
     std::this_thread::sleep_until(std::chrono::high_resolution_clock::now() + p_duration);
   }
@@ -27,9 +27,9 @@ namespace
     std::cout << outText.str();
   }
 
-  std::function<void(void)> do_work_after(const ::milliseconds& p_duration, const std::string& p_message = "work")
+  std::function<void(void)> do_work_after(const std::chrono::nanoseconds& p_duration, const std::string& p_message = "work")
   {
-    return [p_duration, p_message]()
+    return [p_duration, p_message]
       {
         ::sleep_for(p_duration);
         ::print(p_message);
@@ -47,13 +47,13 @@ namespace
     ::print("main");
 
     // invoke some work
-    auto invocation = worker.invoke(::do_work_after(::milliseconds(200)));
+    auto invocation = worker.invoke(::do_work_after(200ms));
 
     // check if invocation is expired
     std::cout << "   Invocation expired: " << std::boolalpha << invocation.expired() << '\n';
 
     // wait for everything to complete
-    ::sleep_for(::milliseconds(1000));
+    ::sleep_for(1s);
 
     // check if invocation is expired
     std::cout << "   Invocation expired: " << std::boolalpha << invocation.expired() << '\n';
@@ -77,16 +77,16 @@ namespace
     std::cout << "            Worker size: " << worker.size() << '\n';
 
     // create an delaying invocation
-    worker.invoke(::do_work_after(::milliseconds(200)));
+    worker.invoke(::do_work_after(200ms));
 
     // create a pending invocation
-    auto invocation = worker.invoke(::do_work_after(::milliseconds(0)));
+    auto invocation = worker.invoke(::do_work_after(0s));
 
     // check ownership of invocation
     std::cout << "Worker invocation owner: " << worker.owner(invocation) << '\n';
 
     // wait for everything to complete
-    ::sleep_for(::milliseconds(1000));
+    ::sleep_for(1s);
 
     // check ownership of invocation
     std::cout << "Worker invocation owner: " << worker.owner(invocation) << '\n';
@@ -98,11 +98,11 @@ namespace
     flib::worker worker(true, 2);
 
     // create two invocations that will be executed in parallel
-    worker.invoke(::do_work_after(::milliseconds(200), "task1"));
-    worker.invoke(::do_work_after(::milliseconds(200), "task2"));
+    worker.invoke(::do_work_after(200ms, "task1"));
+    worker.invoke(::do_work_after(200ms, "task2"));
 
     // wait for everything to complete
-    ::sleep_for(::milliseconds(1000));
+    ::sleep_for(1s);
   }
 
   void example_disabling(void)
@@ -111,22 +111,22 @@ namespace
     flib::worker worker(false);
 
     // invocation will wait until executor is enabled
-    worker.invoke(::do_work_after(::milliseconds(0), "task1"));
+    worker.invoke(::do_work_after(0s, "task1"));
 
     // enable worker
     worker.enable();
 
     // wait for invocation to complete
-    ::sleep_for(::milliseconds(200));
+    ::sleep_for(200ms);
 
     // disable worker
     worker.disable();
 
     // invocation will wait until executor is enabled
-    worker.invoke(::do_work_after(::milliseconds(0), "task2"));
+    worker.invoke(::do_work_after(0s, "task2"));
 
     // wait, just to be sure
-    ::sleep_for(::milliseconds(200));
+    ::sleep_for(200ms);
   }
 
   void example_invocation_cancellation(void)
@@ -135,10 +135,10 @@ namespace
     flib::worker worker;
 
     // create an delaying invocation
-    worker.invoke(::do_work_after(::milliseconds(200)));
+    worker.invoke(::do_work_after(200ms));
 
     // create a pending invocation
-    auto invocation = worker.invoke(::do_work_after(::milliseconds(0)));
+    auto invocation = worker.invoke(::do_work_after(0s));
 
     // cancel the invocation - alternative code: worker.cancel(invocation);
     invocation.cancel();
@@ -147,7 +147,7 @@ namespace
     std::cout << "Worker invocation owner: " << worker.owner(invocation) << '\n';
 
     // wait for everything to complete
-    ::sleep_for(::milliseconds(1000));
+    ::sleep_for(1s);
   }
 
   void example_priority_invocations(void)
@@ -156,16 +156,16 @@ namespace
     flib::worker worker;
 
     // create an delaying invocation
-    worker.invoke(::do_work_after(::milliseconds(200)));
+    worker.invoke(::do_work_after(200ms));
 
     // invoke some work with regular priority
-    worker.invoke(::do_work_after(::milliseconds(0), "work - normal"));
+    worker.invoke(::do_work_after(0s, "work - normal"));
 
     // invoke some work with higher priority
-    worker.invoke(::do_work_after(::milliseconds(0), "work - priority"), 1);
+    worker.invoke(::do_work_after(0s, "work - priority"), 1);
 
     // wait for everything to complete
-    ::sleep_for(::milliseconds(1000));
+    ::sleep_for(1s);
   }
 #pragma endregion
 }
