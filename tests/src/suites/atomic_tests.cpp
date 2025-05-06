@@ -1,4 +1,4 @@
-// Copyright © 2020-2024 Luka Arnecic.
+// Copyright © 2020-2025 Luka Arnecic.
 // See the LICENSE file at the top-level directory of this distribution.
 
 #include <flib/atomic.hpp>
@@ -9,8 +9,25 @@
 #include <future>
 #include <string>
 #include <tuple>
+#include <utility>
 
 #include <catch2/catch2.hpp>
+
+using namespace std::chrono_literals;
+
+namespace
+{
+  inline void sleep_for(const std::chrono::nanoseconds& p_duration)
+  {
+    std::this_thread::sleep_until(std::chrono::high_resolution_clock::now() + p_duration);
+  }
+
+  template<class T>
+  inline std::function<bool(const T&)> not_equal_to(T p_value)
+  {
+    return std::bind(std::not_equal_to<T>(), std::placeholders::_1, std::move(p_value));
+  }
+}
 
 TEST_CASE("Atomic tests - Sanity check", "[atomic]")
 {
@@ -50,50 +67,53 @@ TEST_CASE("Atomic tests - Wait and notify", "[atomic]")
 {
   SECTION("Wait and notify_one")
   {
+    bool result = false;
     flib::atomic<uint32_t> value(0);
-    auto task = std::async(std::launch::async, [&value]
+    auto task = std::async(std::launch::async, [&result, &value]
       {
-        value.wait(std::bind(std::not_equal_to<uint32_t>(), std::placeholders::_1, 0));
+        return value.wait(not_equal_to(0));
       });
     value.store(1);
     REQUIRE(1 == value);
     REQUIRE(1 == value.load());
     value.notify_one();
-    REQUIRE(std::future_status::ready == task.wait_for(std::chrono::milliseconds(100)));
-    task.get();
+    REQUIRE(std::future_status::ready == task.wait_for(100ms));
+    REQUIRE(task.get());
   }
   SECTION("Wait and notify_all")
   {
+    bool result1 = false;
+    bool result2 = false;
     flib::atomic<uint32_t> value(0);
-    auto task1 = std::async(std::launch::async, [&value]
+    auto task1 = std::async(std::launch::async, [&result1, &value]
       {
-        value.wait(std::bind(std::not_equal_to<uint32_t>(), std::placeholders::_1, 0));
+        return value.wait(not_equal_to(0));
       });
-    auto task2 = std::async(std::launch::async, [&value]
+    auto task2 = std::async(std::launch::async, [&result2, &value]
       {
-        value.wait(std::bind(std::not_equal_to<uint32_t>(), std::placeholders::_1, 0));
+        return value.wait(not_equal_to(0));
       });
     value.store(1);
     REQUIRE(1 == value);
     REQUIRE(1 == value.load());
     value.notify_all();
-    REQUIRE(std::future_status::ready == task1.wait_for(std::chrono::milliseconds(100)));
-    REQUIRE(std::future_status::ready == task2.wait_for(std::chrono::milliseconds(100)));
-    task1.get();
-    task2.get();
+    REQUIRE(std::future_status::ready == task1.wait_for(100ms));
+    REQUIRE(std::future_status::ready == task2.wait_for(100ms));
+    REQUIRE(task1.get());
+    REQUIRE(task2.get());
   }
   SECTION("Wait_for and notify_one")
   {
     flib::atomic<uint32_t> value(0);
     auto task = std::async(std::launch::async, [&value]
       {
-        return value.wait_for(std::chrono::milliseconds(100),
-          std::bind(std::not_equal_to<uint32_t>(), std::placeholders::_1, 0));
+        return value.wait_for(100ms, not_equal_to(0));
       });
     value.store(1);
     REQUIRE(1 == value);
     REQUIRE(1 == value.load());
     value.notify_one();
+    REQUIRE(std::future_status::ready == task.wait_for(100ms));
     REQUIRE(task.get());
   }
   SECTION("Wait_for and notify_all")
@@ -101,39 +121,38 @@ TEST_CASE("Atomic tests - Wait and notify", "[atomic]")
     flib::atomic<uint32_t> value(0);
     auto task1 = std::async(std::launch::async, [&value]
       {
-        return value.wait_for(std::chrono::milliseconds(100),
-          std::bind(std::not_equal_to<uint32_t>(), std::placeholders::_1, 0));
+        return value.wait_for(100ms, not_equal_to(0));
       });
     auto task2 = std::async(std::launch::async, [&value]
       {
-        return value.wait_for(std::chrono::milliseconds(100),
-          std::bind(std::not_equal_to<uint32_t>(), std::placeholders::_1, 0));
+        return value.wait_for(100ms, not_equal_to(0));
       });
     value.store(1);
     REQUIRE(1 == value);
     REQUIRE(1 == value.load());
     value.notify_all();
+    REQUIRE(std::future_status::ready == task1.wait_for(100ms));
+    REQUIRE(std::future_status::ready == task2.wait_for(100ms));
     REQUIRE(task1.get());
     REQUIRE(task2.get());
   }
   SECTION("Wait_for timeouting")
   {
     flib::atomic<uint32_t> value(0);
-    REQUIRE(!value.wait_for(std::chrono::milliseconds(50),
-      std::bind(std::not_equal_to<uint32_t>(), std::placeholders::_1, 0)));
+    REQUIRE(!value.wait_for(50ms, not_equal_to(0)));
   }
   SECTION("Wait_until and notify_one")
   {
     flib::atomic<uint32_t> value(0);
     auto task = std::async(std::launch::async, [&value]
       {
-        return value.wait_until(std::chrono::steady_clock::now() + std::chrono::milliseconds(100),
-          std::bind(std::not_equal_to<uint32_t>(), std::placeholders::_1, 0));
+        return value.wait_until(flib::atomic_base::clock_t::now() + 100ms, not_equal_to(0));
       });
     value.store(1);
     REQUIRE(1 == value);
     REQUIRE(1 == value.load());
     value.notify_one();
+    REQUIRE(std::future_status::ready == task.wait_for(100ms));
     REQUIRE(task.get());
   }
   SECTION("Wait_until and notify_all")
@@ -141,26 +160,25 @@ TEST_CASE("Atomic tests - Wait and notify", "[atomic]")
     flib::atomic<uint32_t> value(0);
     auto task1 = std::async(std::launch::async, [&value]
       {
-        return value.wait_until(std::chrono::steady_clock::now() + std::chrono::milliseconds(100),
-          std::bind(std::not_equal_to<uint32_t>(), std::placeholders::_1, 0));
+        return value.wait_until(flib::atomic_base::clock_t::now() + 100ms, not_equal_to(0));
       });
     auto task2 = std::async(std::launch::async, [&value]
       {
-        return value.wait_until(std::chrono::steady_clock::now() + std::chrono::milliseconds(100),
-          std::bind(std::not_equal_to<uint32_t>(), std::placeholders::_1, 0));
+        return value.wait_until(flib::atomic_base::clock_t::now() + 100ms, not_equal_to(0));
       });
     value.store(1);
     REQUIRE(1 == value);
     REQUIRE(1 == value.load());
     value.notify_all();
+    REQUIRE(std::future_status::ready == task1.wait_for(100ms));
+    REQUIRE(std::future_status::ready == task2.wait_for(100ms));
     REQUIRE(task1.get());
     REQUIRE(task2.get());
   }
   SECTION("Wait_until timeouting")
   {
     flib::atomic<uint32_t> value(0);
-    REQUIRE(!value.wait_until(std::chrono::steady_clock::now() + std::chrono::milliseconds(50),
-      std::bind(std::not_equal_to<uint32_t>(), std::placeholders::_1, 0)));
+    REQUIRE(!value.wait_until(flib::atomic_base::clock_t::now() + 50ms, not_equal_to(0)));
   }
 }
 
@@ -195,4 +213,39 @@ TEST_CASE("Atomic tests - Complex types", "[atomic]")
     REQUIRE(type{ true, "3" } == static_cast<type>(value));
     REQUIRE(type{ true, "3" } == value.load());
   }
+}
+
+TEST_CASE("Atomic tests - Complex destruction", "[atomic]")
+{
+  std::future<void> task;
+  bool result = false;
+  SECTION("Wait while destruction")
+  {
+    flib::atomic<uint32_t> value(0);
+    task = std::async(std::launch::async, [&result, &value]
+      {
+        result = value.wait(not_equal_to(0));
+      });
+    ::sleep_for(100ms);
+  }
+  SECTION("Wait_for while destruction")
+  {
+    flib::atomic<uint32_t> value(0);
+    task = std::async(std::launch::async, [&result, &value]
+      {
+        result = value.wait_for(50ms, not_equal_to(0));
+      });
+    ::sleep_for(100ms);
+  }
+  SECTION("Wait_until while destruction")
+  {
+    flib::atomic<uint32_t> value(0);
+    task = std::async(std::launch::async, [&result, &value]
+      {
+        result = value.wait_until(flib::atomic_base::clock_t::now() + 50ms, not_equal_to(0));
+      });
+    ::sleep_for(100ms);
+  }
+  task.get();
+  REQUIRE(false == result);
 }

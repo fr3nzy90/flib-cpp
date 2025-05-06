@@ -12,6 +12,8 @@
 #include <flib/atomic.hpp>
 #include <flib/mld.hpp>
 
+using namespace std::chrono_literals;
+
 namespace
 {
 #pragma region Helpers
@@ -52,7 +54,7 @@ namespace
   }
 
   template<class T>
-  void set_and_notify(flib::atomic<T>& p_obj, T p_value, std::chrono::milliseconds p_delay)
+  void set_and_notify(flib::atomic<T>& p_obj, T p_value, std::chrono::nanoseconds p_delay)
   {
     // wait for specified duration
     std::this_thread::sleep_until(std::chrono::high_resolution_clock::now() + p_delay);
@@ -102,8 +104,7 @@ namespace
         std::cout << "Processor waiting\n";
 
         // wait until atomic changes to initialized and is notified or until certain duration elapsed
-        bool result = value.wait_for(std::chrono::seconds(1),
-          std::bind(std::equal_to<::test_state>(), ::test_state::initialized, std::placeholders::_1));
+        bool result = value.wait_for(1s, std::bind(std::equal_to<::test_state>(), ::test_state::initialized, std::placeholders::_1));
 
         // print reason for wait stop
         std::cout << "Processor stopped waiting, predicate was " << (result ? "valid" : "invalid") << '\n';
@@ -112,7 +113,7 @@ namespace
         std::cout << "Value set to " << ::to_string(value) << " ... processing\n";
 
         // change atomic value to processed and notify_all waiters with delay of 1 second
-        ::set_and_notify(value, ::test_state::processed, std::chrono::seconds(1));
+        ::set_and_notify(value, ::test_state::processed, 1s);
       });
 
     auto completion_task = std::async(std::launch::async, [&value]
@@ -120,8 +121,7 @@ namespace
         std::cout << "Completor waiting\n";
 
         // wait until atomic changes to processed and is notified or until certain duration elapsed
-        bool result = value.wait_for(std::chrono::seconds(2),
-          std::bind(std::equal_to<::test_state>(), ::test_state::processed, std::placeholders::_1));
+        bool result = value.wait_for(2s, std::bind(std::equal_to<::test_state>(), ::test_state::processed, std::placeholders::_1));
 
         // print reason for wait stop
         std::cout << "Completor stopped waiting, predicate was " << (result ? "valid" : "invalid") << '\n';
@@ -130,7 +130,7 @@ namespace
         std::cout << "Value set to " << ::to_string(value) << " ... completing\n";
 
         // change atomic value to completed and notify_all waiters with delay of 1 second
-        ::set_and_notify(value, ::test_state::completed, std::chrono::seconds(1));
+        ::set_and_notify(value, ::test_state::completed, 1s);
       });
 
     auto termination_task = std::async(std::launch::async, [&value]
@@ -138,8 +138,7 @@ namespace
         std::cout << "Terminator waiting\n";
 
         // wait until atomic changes to completed and is notified or until certain duration elapsed
-        bool result = value.wait_for(std::chrono::seconds(3),
-          std::bind(std::equal_to<::test_state>(), ::test_state::completed, std::placeholders::_1));
+        bool result = value.wait_for(3s, std::bind(std::equal_to<::test_state>(), ::test_state::completed, std::placeholders::_1));
 
         // print reason for wait stop
         std::cout << "Terminator stopped waiting, predicate was " << (result ? "valid" : "invalid") << '\n';
@@ -149,7 +148,7 @@ namespace
       });
 
     // change atomic value to completed and notify_all waiters with delay of 500 milliseconds
-    ::set_and_notify(value, ::test_state::initialized, std::chrono::milliseconds(500));
+    ::set_and_notify(value, ::test_state::initialized, 500ms);
 
     processing_task.get();
     completion_task.get();
