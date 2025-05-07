@@ -51,19 +51,19 @@ namespace flib
     virtual bool wait_until(const clock_t::time_point& p_timepoint, predicate_t p_predicate);
 
   protected:
-    using _mutex = std::mutex;
-    using _waiting_strategy = std::function<bool(std::unique_lock<_mutex>&)>;
+    using _mutex_t = std::mutex;
+    using _waiting_strategy_t = std::function<bool(std::unique_lock<_mutex_t>&)>;
 
   protected:
     virtual bool _condition_check(predicate_t p_predicate) const;
-    virtual bool _wait(_waiting_strategy p_strategy);
+    virtual bool _wait(_waiting_strategy_t p_strategy);
 
   protected:
     T m_value{};
     bool m_destruct{ false };
     uint64_t m_wait_count{ 0ull };
     std::condition_variable m_condition;
-    mutable _mutex m_mtx;
+    mutable _mutex_t m_mtx;
   };
 #pragma endregion
 
@@ -178,7 +178,7 @@ namespace flib
   }
 
   template<class T>
-  inline bool atomic<T>::_wait(_waiting_strategy p_strategy)
+  inline bool atomic<T>::_wait(_waiting_strategy_t p_strategy)
   {
     std::unique_lock<decltype(m_mtx)> guard(m_mtx);
     ++m_wait_count;

@@ -50,7 +50,7 @@ namespace flib
     virtual void unsubscribe(const observable_subscription& p_subscription);
 
   protected:
-    virtual observable_subscription _create(observable_subscription::token_t p_token);
+    virtual observable_subscription _make_subscription(observable_subscription::token_t p_token);
 
   protected:
     std::set<std::shared_ptr<void>> m_subscriptions;
@@ -116,7 +116,7 @@ namespace flib
     m_subscriptions.erase(p_subscription.m_token.lock());
   }
 
-  inline observable_subscription observable_base::_create(observable_subscription::token_t p_token)
+  inline observable_subscription observable_base::_make_subscription(observable_subscription::token_t p_token)
   {
     return { *this, p_token };
   }
@@ -137,7 +137,7 @@ namespace flib
     {
       return {};
     }
-    return _create(*(m_subscriptions.emplace(std::make_shared<observer_t>(std::move(p_observer))).first));
+    return _make_subscription(*(m_subscriptions.emplace(std::make_shared<observer_t>(std::move(p_observer))).first));
   }
 #pragma endregion
 }
