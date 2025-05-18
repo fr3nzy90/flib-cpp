@@ -20,6 +20,9 @@ namespace flib
     using clock_t = std::chrono::steady_clock;
     // Duration type definition - enforced minimum us duration unit
     using duration_t = std::chrono::microseconds;
+
+  protected:
+    atomic_base(void) = default;
   };
 
   template<class T>
